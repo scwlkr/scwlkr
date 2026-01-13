@@ -382,6 +382,8 @@ Edit `.business-card:hover` styles (around line 179):
 ```
 /Users/shanewalker/Desktop/dev/scwlkr/
 ├── index.html                    # Main site (production-ready)
+├── brand/
+│   └── index.html               # Brand resources page (semi-hidden)
 ├── README.md                     # Project documentation
 ├── CLAUDE.md                     # This file (Claude Code instructions)
 ├── CHANGELOG.md                  # Version history
@@ -396,15 +398,21 @@ Edit `.business-card:hover` styles (around line 179):
 │       ├── pfp-square.jpeg      # Profile photo (USED)
 │       ├── dink-boys-logo.png   # Dink Boys logo (USED)
 │       ├── scwlkr_colors.png    # Brand color palette reference
+│       ├── scwlkr_logo.svg      # Vector logo with animated letters (USED)
+│       ├── scwlkr_icon.png      # Brand mark - green L icon (USED)
+│       ├── scwlkr_full_screen.png   # Desktop wallpaper (USED)
+│       ├── scwlkr_full-square.png   # Square format wallpaper (USED)
+│       ├── scwlkr_iphone.png    # iPhone wallpaper (USED)
+│       ├── scwlkr_full_1000px.png   # Logo 1000px (USED)
+│       ├── scwlkr_full_400px.png    # Logo 400px (USED)
+│       ├── scwlkr_full_180px.png    # Logo 180px (USED)
+│       ├── favicon.png          # Favicon 180px (USED)
 │       ├── pfp.jpeg             # Alternative photo (unused)
-│       ├── favicon.png          # Alternative favicon (unused)
-│       ├── favicon.svg          # SVG favicon (unused)
-│       ├── profile.svg          # SVG placeholder (unused)
 │       └── instagram_logo.png   # Local icon (unused)
 └── logo/
-    ├── scwlkr-logo_144px.png    # Favicon (USED)
-    ├── scwlkr-logo_V1.png       # Full-size brand logo
-    └── scwlkr-logo_V1.ai        # Illustrator source file
+    ├── scwlkr_full_1000px.png   # Logo 1000px copy
+    ├── scwlkr_full_400px.png    # Logo 400px copy
+    └── scwlkr_full_180px.png    # Logo 180px copy
 ```
 
 ## Common Tasks
