@@ -81,6 +81,18 @@
       perspective-origin: center center;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;
+    }
+
+    /* ===== STARRY BACKGROUND ===== */
+    #starsCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      pointer-events: none;
     }
 
     /* ===== LAYOUT ===== */
@@ -193,14 +205,18 @@
     }
 
     /* ===== TRON LIGHT-CYCLE LOGO ANIMATION ===== */
+    .animated-logo-wrapper {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      margin-bottom: var(--space-lg);
+    }
+
     .animated-logo {
       width: 75vw;
-      max-width: none;
+      max-width: 1200px;
       height: auto;
-      /* Center the logo even if it overflows container */
-      margin-left: calc((100% - 75vw) / 2);
-      margin-right: calc((100% - 75vw) / 2);
-      margin-bottom: var(--space-lg);
       display: block;
     }
 
@@ -220,9 +236,9 @@
       stroke-width: 18;
       stroke-linecap: round;
       stroke-linejoin: round;
-      opacity: 0.7;
+      opacity: 0;  /* Start invisible, JS controls visibility */
       filter: url(#trailGlow);
-      will-change: stroke-dashoffset;
+      will-change: stroke-dashoffset, opacity;
     }
 
     /* Secondary trail - slightly smaller, creates depth */
@@ -900,9 +916,13 @@
 
 <body>
   <div class="container">
+    <!-- Starry background canvas -->
+    <canvas id="starsCanvas"></canvas>
+
     <!-- Header with Animated SVG Logo -->
     <header class="brand-header">
       <!-- Inline SVG with Tron-style animated letters -->
+      <div class="animated-logo-wrapper">
       <svg class="animated-logo" id="animatedLogo" viewBox="0 0 4167 4167" xmlns="http://www.w3.org/2000/svg"
         aria-label="scwlkr logo">
         <!-- SVG Filter Definitions -->
@@ -984,6 +1004,7 @@
           </g>
         </g>
       </svg>
+      </div>
       <h1>Brand Resources</h1>
       <p class="intro">Official guidelines and downloadable assets for the scwlkr brand identity.</p>
       <a href="../" class="back-link" aria-label="Return to main site">
@@ -1348,9 +1369,43 @@
     // Initialize
     initColorCopy();
 
+    // ===== SIMPLE STARRY BACKGROUND =====
+    // Static white dots - no animation, no shooting stars
+    (function initStarryBackground() {
+      'use strict';
+
+      const canvas = document.getElementById('starsCanvas');
+      if (!canvas) return;
+
+      const ctx = canvas.getContext('2d');
+
+      function drawStars() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Simple static stars - small white dots
+        const starCount = 150;
+
+        for (let i = 0; i < starCount; i++) {
+          const x = Math.random() * canvas.width;
+          const y = Math.random() * canvas.height;
+          const size = 0.5 + Math.random() * 1; // 0.5-1.5px
+          const opacity = 0.2 + Math.random() * 0.4; // 0.2-0.6
+
+          ctx.beginPath();
+          ctx.arc(x, y, size, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+          ctx.fill();
+        }
+      }
+
+      drawStars();
+      window.addEventListener('resize', drawStars);
+    })();
+
     // ===== TRON LIGHT-CYCLE LOGO ANIMATION =====
     // Multi-trail comet animation with lifecycle: GROWING → TRAVELING → FADING → (respawn)
-    // Documentation: /docs/scwlkr_logo_light_trail_animation.md
+    // Trails ALWAYS start as invisible dots and grow - never appear suddenly
     (function initTronAnimation() {
       'use strict';
 
@@ -1366,11 +1421,11 @@
       const strokePaths = logo.querySelectorAll('.letter-stroke');
       const fillPaths = logo.querySelectorAll('.letter-fill');
 
-      // Trail states (no DORMANT - immediate respawn)
+      // Trail states
       const STATE = Object.freeze({
-        GROWING: 'growing',      // Starting as dot, tail growing behind head
-        TRAVELING: 'traveling',  // Full trail, head and tail moving together
-        FADING: 'fading'         // Head stopped, tail catching up
+        GROWING: 'growing',      // Starting as invisible dot, tail growing behind moving head
+        TRAVELING: 'traveling',  // Full trail, head and tail moving together at same speed
+        FADING: 'fading'         // Head continues moving, tail catches up faster until trail disappears
       });
 
       // Animation configuration
@@ -1382,12 +1437,12 @@
         // Speed settings
         baseSpeed: 0.275,         // Base movement speed (path units/ms)
         speedVariance: 0.3,       // Speed variance ±30%
-        fadeSpeedMultiplier: 1.3, // Tail catches up 30% faster during fade
-        growSpeedMultiplier: 0.8, // Tail grows at 80% of head speed
+        fadeSpeedMultiplier: 1.5, // Tail catches up 50% faster during fade
+        growSpeedMultiplier: 0.7, // Tail grows at 70% of head speed (so trail grows behind)
 
         // Travel distance
-        minTravelRatio: 0.20,     // Minimum travel (20% of path)
-        maxTravelRatio: 0.85,     // Maximum travel (85% of path)
+        minTravelRatio: 0.25,     // Minimum travel (25% of path)
+        maxTravelRatio: 0.80,     // Maximum travel (80% of path)
 
         // Multi-trail probability
         additionalTrailChance: 0.33,  // 33% chance for 2nd trail
@@ -1405,14 +1460,9 @@
 
       /**
        * Calculates how many trails a letter path should have
-       * 1st trail: 100% chance
-       * 2nd trail: 33% chance
-       * 3rd trail: 16.5% chance (33% × 0.5)
-       * 4th trail: 8.25% chance (33% × 0.5²)
-       * etc.
        */
       function calculateTrailCount() {
-        let count = 1; // Always at least 1 trail
+        let count = 1;
         let chance = CONFIG.additionalTrailChance;
 
         while (Math.random() < chance) {
@@ -1425,7 +1475,7 @@
 
       /**
        * Trail - represents an animated light trail with lifecycle
-       * States: GROWING → TRAVELING → FADING → (immediate respawn)
+       * Key behavior: Trails ALWAYS start invisible and grow from a moving head position
        */
       class Trail {
         constructor(pathElement, pathLength, isClone = false) {
@@ -1436,10 +1486,10 @@
           // Current trail state
           this.state = STATE.GROWING;
 
-          // Trail geometry
-          this.headPosition = 0;
+          // Trail geometry - head is the leading edge, tail trails behind
+          this.headPosition = 0;     // Where the bright front of the trail is
+          this.tailPosition = 0;     // Where the back of the trail is
           this.targetTrailLength = 0;
-          this.currentTrailLength = 0;
 
           // Movement
           this.speed = this._generateSpeed();
@@ -1448,7 +1498,7 @@
           this.travelDistance = 0;
           this.distanceTraveled = 0;
 
-          // Initialize
+          // Initialize - start invisible
           this._startNewJourney();
         }
 
@@ -1471,23 +1521,73 @@
 
         _startNewJourney() {
           this.state = STATE.GROWING;
-          this.headPosition = Math.random() * this.pathLength;
+
+          // Generate trail parameters first
           this.targetTrailLength = this._generateTrailLength();
-          this.currentTrailLength = 2; // Start as tiny dot
           this.speed = this._generateSpeed();
           this.travelDistance = this._generateTravelDistance();
           this.distanceTraveled = 0;
+
+          // Calculate total distance the head will travel before trail disappears
+          // Growing: head moves ~3.3x trail length (since tail moves at 0.7x speed, trail grows at 0.3x head speed)
+          // Traveling: head moves travelDistance
+          // Fading: head moves ~2x trail length (since tail catches up at 1.5x speed)
+          const growthDistance = this.targetTrailLength / (1 - CONFIG.growSpeedMultiplier);
+          const fadeDistance = this.targetTrailLength / (CONFIG.fadeSpeedMultiplier - 1);
+          const totalJourneyLength = growthDistance + this.travelDistance + fadeDistance;
+
+          // Constrain starting position so trail completes before wrapping
+          // Leave a 10% buffer for safety
+          const maxStartPos = Math.max(0, this.pathLength - totalJourneyLength * 1.1);
+          const startPos = Math.random() * maxStartPos;
+
+          this.headPosition = startPos;
+          this.tailPosition = startPos; // Tail starts at same position = invisible (length 0)
+
           this._updateVisuals();
         }
 
+        _getCurrentTrailLength() {
+          // Simple calculation - head should always be ahead of tail (no wrapping)
+          return this.headPosition - this.tailPosition;
+        }
+
+        _shouldRespawn() {
+          // Respawn if head has gone past the end of the path
+          // or if somehow trail got into a wrapped state (head behind tail)
+          return this.headPosition >= this.pathLength || this.headPosition < this.tailPosition;
+        }
+
         _updateVisuals() {
-          const visibleLength = Math.max(this.currentTrailLength, 1);
+          // If trail has gone past path end or wrapped, respawn immediately
+          if (this._shouldRespawn()) {
+            this._startNewJourney();
+            return;
+          }
+
+          const trailLength = this._getCurrentTrailLength();
+
+          // Hide trail completely when it's too small to look like a trail
+          // With stroke-width: 18 and round linecaps, short trails look like dots
+          // Hide until trail is long enough to look like an actual trail segment
+          // IMPORTANT: Also reset dasharray to prevent old values from showing when trail becomes visible
+          const minVisibleLength = 30; // Must be longer than stroke-width to look like a trail
+          if (trailLength < minVisibleLength) {
+            this.path.style.opacity = '0';
+            this.path.style.strokeDasharray = `0 ${this.pathLength}`;
+            this.path.style.strokeDashoffset = '0';
+            return;
+          }
+
+          // Make trail visible
+          this.path.style.opacity = '0.7';
+
           const gap = this.pathLength;
+          this.path.style.strokeDasharray = `${trailLength} ${gap}`;
 
-          this.path.style.strokeDasharray = `${visibleLength} ${gap}`;
-
-          const tailPosition = this.headPosition - visibleLength;
-          this.path.style.strokeDashoffset = this.pathLength - tailPosition;
+          // Position the trail so the visible segment is at the right location
+          // strokeDashoffset shifts the pattern - we want tail position to be where dash starts
+          this.path.style.strokeDashoffset = this.pathLength - this.tailPosition;
         }
 
         update(deltaTime) {
@@ -1505,19 +1605,18 @@
         }
 
         _updateGrowing(deltaTime) {
+          // Head moves at full speed
           const headMovement = this.speed * deltaTime;
           this.headPosition += headMovement;
           this.distanceTraveled += headMovement;
 
-          if (this.headPosition >= this.pathLength) {
-            this.headPosition -= this.pathLength;
-          }
+          // Tail moves slower, so trail grows behind the head
+          const tailMovement = this.speed * CONFIG.growSpeedMultiplier * deltaTime;
+          this.tailPosition += tailMovement;
 
-          const growAmount = this.speed * CONFIG.growSpeedMultiplier * deltaTime;
-          this.currentTrailLength += growAmount;
-
-          if (this.currentTrailLength >= this.targetTrailLength) {
-            this.currentTrailLength = this.targetTrailLength;
+          // Check if trail has grown to target length
+          const currentLength = this._getCurrentTrailLength();
+          if (currentLength >= this.targetTrailLength) {
             this.state = STATE.TRAVELING;
           }
 
@@ -1525,14 +1624,14 @@
         }
 
         _updateTraveling(deltaTime) {
+          // Both head and tail move at the same speed - trail maintains constant length
           const movement = this.speed * deltaTime;
+
           this.headPosition += movement;
+          this.tailPosition += movement;
           this.distanceTraveled += movement;
 
-          if (this.headPosition >= this.pathLength) {
-            this.headPosition -= this.pathLength;
-          }
-
+          // Check if we've traveled far enough to start fading
           if (this.distanceTraveled >= this.travelDistance) {
             this.state = STATE.FADING;
           }
@@ -1541,13 +1640,21 @@
         }
 
         _updateFading(deltaTime) {
-          const shrinkAmount = this.speed * CONFIG.fadeSpeedMultiplier * deltaTime;
-          this.currentTrailLength -= shrinkAmount;
+          // Head continues moving at normal speed
+          const headMovement = this.speed * deltaTime;
+          this.headPosition += headMovement;
 
-          if (this.currentTrailLength <= 0) {
-            // Immediately respawn - no dormant state
+          // Tail catches up faster - shrinking the trail
+          const tailMovement = this.speed * CONFIG.fadeSpeedMultiplier * deltaTime;
+          this.tailPosition += tailMovement;
+
+          // Check if trail has shrunk to nothing (tail caught up to head)
+          const currentLength = this._getCurrentTrailLength();
+          if (currentLength <= 0.5) {
+            // Immediately respawn at a new position
             this._startNewJourney();
           } else {
+            // _updateVisuals will handle wrap detection and respawn if needed
             this._updateVisuals();
           }
         }
@@ -1578,42 +1685,18 @@
             // Additional trails need cloned paths
             pathElement = originalPath.cloneNode(true);
             pathElement.classList.add('trail-clone');
-            // Insert clone right after the original
             originalPath.parentNode.insertBefore(pathElement, originalPath.nextSibling);
           }
 
           const trail = new Trail(pathElement, pathLength, trailIdx > 0);
-
-          // Stagger initial positions within the letter
-          const staggerOffset = trailIdx / trailCount;
-          trail.headPosition = (trail.headPosition + staggerOffset * pathLength) % pathLength;
-
-          // Stagger initial states for visual variety
-          const combinedIndex = letterIndex + trailIdx * 0.3;
-          const staggerRatio = (combinedIndex % 1);
-
-          if (staggerRatio < 0.4) {
-            // Growing state
-            trail.currentTrailLength = trail.targetTrailLength * staggerRatio * 1.5;
-          } else if (staggerRatio < 0.8) {
-            // Traveling state
-            trail.state = STATE.TRAVELING;
-            trail.currentTrailLength = trail.targetTrailLength;
-            trail.distanceTraveled = (staggerRatio - 0.4) * trail.travelDistance * 1.5;
-          } else {
-            // Near end of traveling
-            trail.state = STATE.TRAVELING;
-            trail.currentTrailLength = trail.targetTrailLength;
-            trail.distanceTraveled = trail.travelDistance * 0.85;
-          }
-
-          trail._updateVisuals();
+          // No staggering - _startNewJourney already picks safe random positions
+          // and stagger offsets with modulo can push trails into unsafe wrap zones
           allTrails.push(trail);
         }
       });
 
       /**
-       * Main animation loop - optimized for 60fps smoothness
+       * Main animation loop
        */
       function animate(currentTime) {
         if (lastTime === 0) {
