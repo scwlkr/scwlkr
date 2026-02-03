@@ -1349,7 +1349,8 @@
     initColorCopy();
 
     // ===== TRON LIGHT-CYCLE LOGO ANIMATION =====
-    // Ultra-smooth comet trails with full lifecycle: GROWING → TRAVELING → FADING → DORMANT
+    // Multi-trail comet animation with lifecycle: GROWING → TRAVELING → FADING → (respawn)
+    // Documentation: /docs/scwlkr_logo_light_trail_animation.md
     (function initTronAnimation() {
       'use strict';
 
@@ -1365,36 +1366,35 @@
       const strokePaths = logo.querySelectorAll('.letter-stroke');
       const fillPaths = logo.querySelectorAll('.letter-fill');
 
-      // Trail states - full lifecycle
+      // Trail states (no DORMANT - immediate respawn)
       const STATE = Object.freeze({
         GROWING: 'growing',      // Starting as dot, tail growing behind head
         TRAVELING: 'traveling',  // Full trail, head and tail moving together
-        FADING: 'fading',        // Head stopped, tail catching up
-        DORMANT: 'dormant'       // Invisible, waiting to respawn
+        FADING: 'fading'         // Head stopped, tail catching up
       });
 
-      // Animation configuration - 5x speed increase
+      // Animation configuration
       const CONFIG = Object.freeze({
         // Trail appearance
-        maxTrailLength: 0.18,     // Maximum trail length as ratio of path (18%)
-        minTrailLength: 0.08,     // Minimum trail length (8%) - varied per trail
+        maxTrailLength: 0.18,     // Maximum trail length (18% of path)
+        minTrailLength: 0.08,     // Minimum trail length (8% of path)
 
-        // Speed settings (5x faster than before)
-        baseSpeed: 0.275,         // Base movement speed (path units/ms) - was 0.055
+        // Speed settings
+        baseSpeed: 0.275,         // Base movement speed (path units/ms)
         speedVariance: 0.3,       // Speed variance ±30%
-        fadeSpeedMultiplier: 1.3, // Tail catches up faster during fade
-        growSpeedMultiplier: 0.8, // Tail grows slightly slower than head moves
+        fadeSpeedMultiplier: 1.3, // Tail catches up 30% faster during fade
+        growSpeedMultiplier: 0.8, // Tail grows at 80% of head speed
 
-        // Distance settings
-        minTravelRatio: 0.20,     // Minimum travel distance (20% of path)
-        maxTravelRatio: 0.85,     // Maximum travel distance (85% of path)
+        // Travel distance
+        minTravelRatio: 0.20,     // Minimum travel (20% of path)
+        maxTravelRatio: 0.85,     // Maximum travel (85% of path)
 
-        // Timing (reduced for faster animation)
-        dormantTimeMin: 50,       // Minimum time before respawn (ms)
-        dormantTimeMax: 300,      // Maximum time before respawn (ms)
+        // Multi-trail probability
+        additionalTrailChance: 0.33,  // 33% chance for 2nd trail
+        trailChanceDecay: 0.5,        // Each additional trail is half as likely
 
         // Visual
-        fillOpacity: 0.12,        // Subtle letter fill visibility
+        fillOpacity: 0.12,        // Letter fill visibility
         frameSmoothing: 0.85      // Smoothing factor for frame timing
       });
 
@@ -1404,22 +1404,42 @@
       let smoothDelta = 16.67;
 
       /**
-       * Trail - represents an animated light trail with full lifecycle
-       * States: GROWING → TRAVELING → FADING → DORMANT → GROWING...
+       * Calculates how many trails a letter path should have
+       * 1st trail: 100% chance
+       * 2nd trail: 33% chance
+       * 3rd trail: 16.5% chance (33% × 0.5)
+       * 4th trail: 8.25% chance (33% × 0.5²)
+       * etc.
+       */
+      function calculateTrailCount() {
+        let count = 1; // Always at least 1 trail
+        let chance = CONFIG.additionalTrailChance;
+
+        while (Math.random() < chance) {
+          count++;
+          chance *= CONFIG.trailChanceDecay;
+        }
+
+        return count;
+      }
+
+      /**
+       * Trail - represents an animated light trail with lifecycle
+       * States: GROWING → TRAVELING → FADING → (immediate respawn)
        */
       class Trail {
-        constructor(pathElement, fillElement) {
+        constructor(pathElement, pathLength, isClone = false) {
           this.path = pathElement;
-          this.fill = fillElement;
-          this.pathLength = pathElement.getTotalLength();
+          this.pathLength = pathLength;
+          this.isClone = isClone;
 
           // Current trail state
           this.state = STATE.GROWING;
 
           // Trail geometry
           this.headPosition = 0;
-          this.targetTrailLength = 0; // The full length this trail will grow to
-          this.currentTrailLength = 0; // Starts at 0, grows during GROWING, shrinks during FADING
+          this.targetTrailLength = 0;
+          this.currentTrailLength = 0;
 
           // Movement
           this.speed = this._generateSpeed();
@@ -1428,16 +1448,8 @@
           this.travelDistance = 0;
           this.distanceTraveled = 0;
 
-          // Dormant timer
-          this.dormantTimer = 0;
-
           // Initialize
           this._startNewJourney();
-
-          // Show fill at low opacity
-          if (this.fill) {
-            this.fill.style.opacity = CONFIG.fillOpacity;
-          }
         }
 
         _generateSpeed() {
@@ -1446,7 +1458,6 @@
         }
 
         _generateTrailLength() {
-          // Random trail length between min and max
           const ratio = CONFIG.minTrailLength +
             Math.random() * (CONFIG.maxTrailLength - CONFIG.minTrailLength);
           return this.pathLength * ratio;
@@ -1458,16 +1469,11 @@
           return this.pathLength * ratio;
         }
 
-        _generateDormantTime() {
-          return CONFIG.dormantTimeMin +
-            Math.random() * (CONFIG.dormantTimeMax - CONFIG.dormantTimeMin);
-        }
-
         _startNewJourney() {
           this.state = STATE.GROWING;
           this.headPosition = Math.random() * this.pathLength;
           this.targetTrailLength = this._generateTrailLength();
-          this.currentTrailLength = 2; // Start as tiny dot (2 units)
+          this.currentTrailLength = 2; // Start as tiny dot
           this.speed = this._generateSpeed();
           this.travelDistance = this._generateTravelDistance();
           this.distanceTraveled = 0;
@@ -1480,7 +1486,6 @@
 
           this.path.style.strokeDasharray = `${visibleLength} ${gap}`;
 
-          // Position the trail so the HEAD is at headPosition
           const tailPosition = this.headPosition - visibleLength;
           this.path.style.strokeDashoffset = this.pathLength - tailPosition;
         }
@@ -1496,28 +1501,21 @@
             case STATE.FADING:
               this._updateFading(deltaTime);
               break;
-            case STATE.DORMANT:
-              this._updateDormant(deltaTime);
-              break;
           }
         }
 
         _updateGrowing(deltaTime) {
-          // Head moves forward
           const headMovement = this.speed * deltaTime;
           this.headPosition += headMovement;
           this.distanceTraveled += headMovement;
 
-          // Wrap head position
           if (this.headPosition >= this.pathLength) {
             this.headPosition -= this.pathLength;
           }
 
-          // Trail grows behind the head (tail stays relatively still)
           const growAmount = this.speed * CONFIG.growSpeedMultiplier * deltaTime;
           this.currentTrailLength += growAmount;
 
-          // Check if we've reached full trail length
           if (this.currentTrailLength >= this.targetTrailLength) {
             this.currentTrailLength = this.targetTrailLength;
             this.state = STATE.TRAVELING;
@@ -1527,17 +1525,14 @@
         }
 
         _updateTraveling(deltaTime) {
-          // Move the head forward (tail follows at same speed)
           const movement = this.speed * deltaTime;
           this.headPosition += movement;
           this.distanceTraveled += movement;
 
-          // Wrap head position around the path
           if (this.headPosition >= this.pathLength) {
             this.headPosition -= this.pathLength;
           }
 
-          // Check if we've traveled far enough
           if (this.distanceTraveled >= this.travelDistance) {
             this.state = STATE.FADING;
           }
@@ -1546,61 +1541,75 @@
         }
 
         _updateFading(deltaTime) {
-          // Head is stopped, tail catches up (trail shrinks)
           const shrinkAmount = this.speed * CONFIG.fadeSpeedMultiplier * deltaTime;
           this.currentTrailLength -= shrinkAmount;
 
-          // Check if trail has fully faded
           if (this.currentTrailLength <= 0) {
-            this.currentTrailLength = 0;
-            this.state = STATE.DORMANT;
-            this.dormantTimer = this._generateDormantTime();
-
-            // Hide the trail completely
-            this.path.style.strokeDasharray = '0 ' + this.pathLength;
+            // Immediately respawn - no dormant state
+            this._startNewJourney();
           } else {
             this._updateVisuals();
           }
         }
-
-        _updateDormant(deltaTime) {
-          this.dormantTimer -= deltaTime;
-
-          if (this.dormantTimer <= 0) {
-            this._startNewJourney();
-          }
-        }
       }
 
-      // Create trails for each letter stroke
-      const trails = [];
-      strokePaths.forEach((path, index) => {
-        const fill = fillPaths[index] || null;
-        const trail = new Trail(path, fill);
+      // Create trails for each letter stroke (with multi-trail support)
+      const allTrails = [];
 
-        // Stagger initial states across the lifecycle
-        const staggerRatio = index / strokePaths.length;
+      strokePaths.forEach((originalPath, letterIndex) => {
+        const fill = fillPaths[letterIndex] || null;
+        const pathLength = originalPath.getTotalLength();
 
-        // Distribute trails across different states initially
-        if (staggerRatio < 0.3) {
-          // Some start in GROWING
-          trail.currentTrailLength = trail.targetTrailLength * staggerRatio * 2;
-        } else if (staggerRatio < 0.7) {
-          // Some start in TRAVELING
-          trail.state = STATE.TRAVELING;
-          trail.currentTrailLength = trail.targetTrailLength;
-          trail.distanceTraveled = (staggerRatio - 0.3) * trail.travelDistance;
-        } else {
-          // Some start further along in TRAVELING
-          trail.state = STATE.TRAVELING;
-          trail.currentTrailLength = trail.targetTrailLength;
-          trail.distanceTraveled = (staggerRatio - 0.3) * trail.travelDistance * 1.5;
+        // Set fill opacity
+        if (fill) {
+          fill.style.opacity = CONFIG.fillOpacity;
         }
 
-        trail.headPosition = (staggerRatio * trail.pathLength) % trail.pathLength;
-        trail._updateVisuals();
+        // Determine how many trails this letter gets
+        const trailCount = calculateTrailCount();
 
-        trails.push(trail);
+        for (let trailIdx = 0; trailIdx < trailCount; trailIdx++) {
+          let pathElement;
+
+          if (trailIdx === 0) {
+            // First trail uses the original path
+            pathElement = originalPath;
+          } else {
+            // Additional trails need cloned paths
+            pathElement = originalPath.cloneNode(true);
+            pathElement.classList.add('trail-clone');
+            // Insert clone right after the original
+            originalPath.parentNode.insertBefore(pathElement, originalPath.nextSibling);
+          }
+
+          const trail = new Trail(pathElement, pathLength, trailIdx > 0);
+
+          // Stagger initial positions within the letter
+          const staggerOffset = trailIdx / trailCount;
+          trail.headPosition = (trail.headPosition + staggerOffset * pathLength) % pathLength;
+
+          // Stagger initial states for visual variety
+          const combinedIndex = letterIndex + trailIdx * 0.3;
+          const staggerRatio = (combinedIndex % 1);
+
+          if (staggerRatio < 0.4) {
+            // Growing state
+            trail.currentTrailLength = trail.targetTrailLength * staggerRatio * 1.5;
+          } else if (staggerRatio < 0.8) {
+            // Traveling state
+            trail.state = STATE.TRAVELING;
+            trail.currentTrailLength = trail.targetTrailLength;
+            trail.distanceTraveled = (staggerRatio - 0.4) * trail.travelDistance * 1.5;
+          } else {
+            // Near end of traveling
+            trail.state = STATE.TRAVELING;
+            trail.currentTrailLength = trail.targetTrailLength;
+            trail.distanceTraveled = trail.travelDistance * 0.85;
+          }
+
+          trail._updateVisuals();
+          allTrails.push(trail);
+        }
       });
 
       /**
@@ -1616,13 +1625,12 @@
         const rawDelta = currentTime - lastTime;
         lastTime = currentTime;
 
-        // Exponential smoothing for consistent timing
         smoothDelta = smoothDelta * CONFIG.frameSmoothing + rawDelta * (1 - CONFIG.frameSmoothing);
         const delta = Math.min(smoothDelta, 32);
 
         // Update all trails
-        for (let i = 0; i < trails.length; i++) {
-          trails[i].update(delta);
+        for (let i = 0; i < allTrails.length; i++) {
+          allTrails[i].update(delta);
         }
 
         animationId = requestAnimationFrame(animate);
