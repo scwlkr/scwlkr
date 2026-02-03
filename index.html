@@ -364,6 +364,30 @@
       animation-delay: 0.6s, 2.1s;
     }
 
+    .personal-link:nth-child(14) {
+      animation-delay: 0.65s, 2.2s;
+    }
+
+    /* Brand Link (Reversed) specialized style */
+    .personal-link.brand-link {
+      background: rgba(35, 206, 107, 0.65);
+      /* 65% opaque green */
+      border-color: rgba(35, 206, 107, 0.65);
+      color: var(--wall-black);
+      font-weight: 700;
+      justify-content: space-between;
+      /* Push arrow to right */
+    }
+
+    .personal-link.brand-link:hover {
+      background: var(--accent-green);
+      opacity: 1;
+      color: var(--wall-black);
+      border-color: var(--accent-green);
+      transform: translate3d(0, -2px, 8px) !important;
+      box-shadow: 0 4px 12px rgba(35, 206, 107, 0.4);
+    }
+
     .personal-link:hover {
       background: rgba(136, 136, 136, 0.12);
       border-color: rgba(35, 206, 107, 0.4);
@@ -818,6 +842,11 @@
             aria-label="Substack">
             <img src="https://cdn.simpleicons.org/substack/23ce6b" alt="" class="link-icon" />
             <span>Substack</span>
+          </a>
+
+          <a href="https://scwlkr.com/brand" class="personal-link brand-link" aria-label="Brand Resources">
+            <span>brand</span>
+            <span>&rarr;</span>
           </a>
         </nav>
       </aside>
