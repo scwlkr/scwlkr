@@ -214,22 +214,26 @@
       opacity: 1;
     }
 
-    /* Stroke paths for Tron animation */
+    /* Stroke paths for Tron animation - the glowing trail */
     .animated-logo .letter-stroke {
+      fill: none;
+      stroke-width: 18;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      opacity: 0.7;
+      filter: url(#trailGlow);
+      will-change: stroke-dashoffset;
+    }
+
+    /* Secondary trail - slightly smaller, creates depth */
+    .animated-logo .letter-stroke-secondary {
       fill: none;
       stroke-width: 12;
       stroke-linecap: round;
       stroke-linejoin: round;
-      opacity: 0;
-    }
-
-    .animated-logo .letter-stroke.animating {
-      opacity: 1;
-    }
-
-    /* Glow filter will be applied via JS with gradient */
-    .animated-logo .letter-stroke.glow {
-      filter: url(#tronGlow);
+      opacity: 0.5;
+      filter: url(#trailGlow);
+      will-change: stroke-dashoffset;
     }
 
     /* ===== BRAND MARK SECTION ===== */
@@ -901,40 +905,23 @@
       <!-- Inline SVG with Tron-style animated letters -->
       <svg class="animated-logo" id="animatedLogo" viewBox="0 0 4167 4167" xmlns="http://www.w3.org/2000/svg"
         aria-label="scwlkr logo">
-        <!-- SVG Filter Definitions for Tron Glow Effect -->
+        <!-- SVG Filter Definitions -->
         <defs>
+          <!-- Glow filter for trail edges -->
+          <filter id="trailGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
           <!-- Green-to-white gradient for trail -->
           <linearGradient id="tronTrailGradient" x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%" stop-color="#23CE6B" stop-opacity="1" />
-            <stop offset="60%" stop-color="#23CE6B" stop-opacity="0.8" />
-            <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.3" />
+            <stop offset="60%" stop-color="#23CE6B" stop-opacity="0.85" />
+            <stop offset="100%" stop-color="#7FFFB0" stop-opacity="0.4" />
           </linearGradient>
-
-          <!-- Glow filter for the light cycle head -->
-          <filter id="tronGlow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur1" />
-            <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur2" />
-            <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="blur3" />
-            <feMerge>
-              <feMergeNode in="blur3" />
-              <feMergeNode in="blur2" />
-              <feMergeNode in="blur1" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-
-          <!-- Intense glow for the "light cycle head" -->
-          <filter id="tronHead" x="-100%" y="-100%" width="300%" height="300%">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
-            <feColorMatrix type="matrix" in="blur" result="coloredBlur" values="0 0 0 0 0.137
-                      0 0 0 0 0.808
-                      0 0 0 0 0.420
-                      0 0 0 1 0" />
-            <feMerge>
-              <feMergeNode in="coloredBlur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
         </defs>
 
         <rect x="0" y="0" width="4167" height="4167" fill="#000000" />
@@ -1362,12 +1349,14 @@
     initColorCopy();
 
     // ===== TRON LIGHT-CYCLE LOGO ANIMATION =====
-    // Continuous, never-stopping, generative animation
+    // Ultra-smooth comet trails with full lifecycle: GROWING → TRAVELING → FADING → DORMANT
     (function initTronAnimation() {
+      'use strict';
+
       const logo = document.getElementById('animatedLogo');
       if (!logo) return;
 
-      // Check for reduced motion preference
+      // Respect reduced motion preference
       if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
         logo.classList.add('revealed');
         return;
@@ -1376,164 +1365,285 @@
       const strokePaths = logo.querySelectorAll('.letter-stroke');
       const fillPaths = logo.querySelectorAll('.letter-fill');
 
-      // Configuration for continuous animation
-      const config = {
-        trailLength: 0.12,        // Trail visible ratio (12% of path)
-        baseSpeed: 0.0004,        // Base speed (path units per ms)
-        speedVariance: 0.6,       // Speed can vary ±60%
-        trailsPerPath: 3,         // Multiple trails per letter
-        hoverRadius: 200,         // Pixel radius for hover acceleration
-        hoverBoost: 2.5,          // Speed multiplier on hover
-        fillOpacity: 0.15         // Subtle fill visibility
-      };
+      // Trail states - full lifecycle
+      const STATE = Object.freeze({
+        GROWING: 'growing',      // Starting as dot, tail growing behind head
+        TRAVELING: 'traveling',  // Full trail, head and tail moving together
+        FADING: 'fading',        // Head stopped, tail catching up
+        DORMANT: 'dormant'       // Invisible, waiting to respawn
+      });
 
-      // Mouse state
-      let mouseX = -1000;
-      let mouseY = -1000;
+      // Animation configuration - 5x speed increase
+      const CONFIG = Object.freeze({
+        // Trail appearance
+        maxTrailLength: 0.18,     // Maximum trail length as ratio of path (18%)
+        minTrailLength: 0.08,     // Minimum trail length (8%) - varied per trail
+
+        // Speed settings (5x faster than before)
+        baseSpeed: 0.275,         // Base movement speed (path units/ms) - was 0.055
+        speedVariance: 0.3,       // Speed variance ±30%
+        fadeSpeedMultiplier: 1.3, // Tail catches up faster during fade
+        growSpeedMultiplier: 0.8, // Tail grows slightly slower than head moves
+
+        // Distance settings
+        minTravelRatio: 0.20,     // Minimum travel distance (20% of path)
+        maxTravelRatio: 0.85,     // Maximum travel distance (85% of path)
+
+        // Timing (reduced for faster animation)
+        dormantTimeMin: 50,       // Minimum time before respawn (ms)
+        dormantTimeMax: 300,      // Maximum time before respawn (ms)
+
+        // Visual
+        fillOpacity: 0.12,        // Subtle letter fill visibility
+        frameSmoothing: 0.85      // Smoothing factor for frame timing
+      });
+
+      // Animation state
       let animationId = null;
-      let lastTimestamp = 0;
+      let lastTime = 0;
+      let smoothDelta = 16.67;
 
-      // Trail class - each trail is an independent "light cycle"
+      /**
+       * Trail - represents an animated light trail with full lifecycle
+       * States: GROWING → TRAVELING → FADING → DORMANT → GROWING...
+       */
       class Trail {
-        constructor(pathElement, fillElement, letterGroup) {
+        constructor(pathElement, fillElement) {
           this.path = pathElement;
           this.fill = fillElement;
-          this.letterGroup = letterGroup;
-          this.length = pathElement.getTotalLength();
-          this.reset();
-        }
+          this.pathLength = pathElement.getTotalLength();
 
-        reset() {
-          // Each trail gets completely random parameters
-          this.position = Math.random() * this.length;
-          this.speed = config.baseSpeed * (1 + (Math.random() - 0.5) * 2 * config.speedVariance);
-          this.direction = Math.random() > 0.3 ? 1 : -1; // 70% forward, 30% reverse
-          this.trailSize = this.length * config.trailLength * (0.5 + Math.random());
-        }
+          // Current trail state
+          this.state = STATE.GROWING;
 
-        update(deltaTime, hoverMultiplier) {
-          // Move the trail along the path
-          const effectiveSpeed = this.speed * hoverMultiplier * this.direction;
-          this.position += effectiveSpeed * deltaTime;
+          // Trail geometry
+          this.headPosition = 0;
+          this.targetTrailLength = 0; // The full length this trail will grow to
+          this.currentTrailLength = 0; // Starts at 0, grows during GROWING, shrinks during FADING
 
-          // Wrap around when reaching ends (continuous loop)
-          if (this.position > this.length) {
-            this.position = this.position % this.length;
-            // Randomize speed slightly on each loop
-            this.speed = config.baseSpeed * (1 + (Math.random() - 0.5) * 2 * config.speedVariance);
-          } else if (this.position < 0) {
-            this.position = this.length + (this.position % this.length);
-            this.speed = config.baseSpeed * (1 + (Math.random() - 0.5) * 2 * config.speedVariance);
+          // Movement
+          this.speed = this._generateSpeed();
+
+          // Journey planning
+          this.travelDistance = 0;
+          this.distanceTraveled = 0;
+
+          // Dormant timer
+          this.dormantTimer = 0;
+
+          // Initialize
+          this._startNewJourney();
+
+          // Show fill at low opacity
+          if (this.fill) {
+            this.fill.style.opacity = CONFIG.fillOpacity;
           }
         }
 
-        getOffset() {
-          // Convert position to stroke-dashoffset
-          return this.length - this.position;
+        _generateSpeed() {
+          const variance = (Math.random() + Math.random()) / 2 - 0.5;
+          return CONFIG.baseSpeed * (1 + variance * CONFIG.speedVariance);
+        }
+
+        _generateTrailLength() {
+          // Random trail length between min and max
+          const ratio = CONFIG.minTrailLength +
+            Math.random() * (CONFIG.maxTrailLength - CONFIG.minTrailLength);
+          return this.pathLength * ratio;
+        }
+
+        _generateTravelDistance() {
+          const ratio = CONFIG.minTravelRatio +
+            Math.random() * (CONFIG.maxTravelRatio - CONFIG.minTravelRatio);
+          return this.pathLength * ratio;
+        }
+
+        _generateDormantTime() {
+          return CONFIG.dormantTimeMin +
+            Math.random() * (CONFIG.dormantTimeMax - CONFIG.dormantTimeMin);
+        }
+
+        _startNewJourney() {
+          this.state = STATE.GROWING;
+          this.headPosition = Math.random() * this.pathLength;
+          this.targetTrailLength = this._generateTrailLength();
+          this.currentTrailLength = 2; // Start as tiny dot (2 units)
+          this.speed = this._generateSpeed();
+          this.travelDistance = this._generateTravelDistance();
+          this.distanceTraveled = 0;
+          this._updateVisuals();
+        }
+
+        _updateVisuals() {
+          const visibleLength = Math.max(this.currentTrailLength, 1);
+          const gap = this.pathLength;
+
+          this.path.style.strokeDasharray = `${visibleLength} ${gap}`;
+
+          // Position the trail so the HEAD is at headPosition
+          const tailPosition = this.headPosition - visibleLength;
+          this.path.style.strokeDashoffset = this.pathLength - tailPosition;
+        }
+
+        update(deltaTime) {
+          switch (this.state) {
+            case STATE.GROWING:
+              this._updateGrowing(deltaTime);
+              break;
+            case STATE.TRAVELING:
+              this._updateTraveling(deltaTime);
+              break;
+            case STATE.FADING:
+              this._updateFading(deltaTime);
+              break;
+            case STATE.DORMANT:
+              this._updateDormant(deltaTime);
+              break;
+          }
+        }
+
+        _updateGrowing(deltaTime) {
+          // Head moves forward
+          const headMovement = this.speed * deltaTime;
+          this.headPosition += headMovement;
+          this.distanceTraveled += headMovement;
+
+          // Wrap head position
+          if (this.headPosition >= this.pathLength) {
+            this.headPosition -= this.pathLength;
+          }
+
+          // Trail grows behind the head (tail stays relatively still)
+          const growAmount = this.speed * CONFIG.growSpeedMultiplier * deltaTime;
+          this.currentTrailLength += growAmount;
+
+          // Check if we've reached full trail length
+          if (this.currentTrailLength >= this.targetTrailLength) {
+            this.currentTrailLength = this.targetTrailLength;
+            this.state = STATE.TRAVELING;
+          }
+
+          this._updateVisuals();
+        }
+
+        _updateTraveling(deltaTime) {
+          // Move the head forward (tail follows at same speed)
+          const movement = this.speed * deltaTime;
+          this.headPosition += movement;
+          this.distanceTraveled += movement;
+
+          // Wrap head position around the path
+          if (this.headPosition >= this.pathLength) {
+            this.headPosition -= this.pathLength;
+          }
+
+          // Check if we've traveled far enough
+          if (this.distanceTraveled >= this.travelDistance) {
+            this.state = STATE.FADING;
+          }
+
+          this._updateVisuals();
+        }
+
+        _updateFading(deltaTime) {
+          // Head is stopped, tail catches up (trail shrinks)
+          const shrinkAmount = this.speed * CONFIG.fadeSpeedMultiplier * deltaTime;
+          this.currentTrailLength -= shrinkAmount;
+
+          // Check if trail has fully faded
+          if (this.currentTrailLength <= 0) {
+            this.currentTrailLength = 0;
+            this.state = STATE.DORMANT;
+            this.dormantTimer = this._generateDormantTime();
+
+            // Hide the trail completely
+            this.path.style.strokeDasharray = '0 ' + this.pathLength;
+          } else {
+            this._updateVisuals();
+          }
+        }
+
+        _updateDormant(deltaTime) {
+          this.dormantTimer -= deltaTime;
+
+          if (this.dormantTimer <= 0) {
+            this._startNewJourney();
+          }
         }
       }
 
-      // Create multiple trails per path for richer animation
+      // Create trails for each letter stroke
       const trails = [];
       strokePaths.forEach((path, index) => {
-        const length = path.getTotalLength();
-        const letterGroup = path.closest('[data-letter]');
-        const fill = fillPaths[index];
+        const fill = fillPaths[index] || null;
+        const trail = new Trail(path, fill);
 
-        // Set up the path styling
-        path.style.strokeDasharray = `${length * config.trailLength} ${length}`;
-        path.style.filter = 'url(#tronGlow)';
-        path.style.opacity = '1';
+        // Stagger initial states across the lifecycle
+        const staggerRatio = index / strokePaths.length;
 
-        // Show fill at low opacity
-        if (fill) {
-          fill.style.opacity = config.fillOpacity;
+        // Distribute trails across different states initially
+        if (staggerRatio < 0.3) {
+          // Some start in GROWING
+          trail.currentTrailLength = trail.targetTrailLength * staggerRatio * 2;
+        } else if (staggerRatio < 0.7) {
+          // Some start in TRAVELING
+          trail.state = STATE.TRAVELING;
+          trail.currentTrailLength = trail.targetTrailLength;
+          trail.distanceTraveled = (staggerRatio - 0.3) * trail.travelDistance;
+        } else {
+          // Some start further along in TRAVELING
+          trail.state = STATE.TRAVELING;
+          trail.currentTrailLength = trail.targetTrailLength;
+          trail.distanceTraveled = (staggerRatio - 0.3) * trail.travelDistance * 1.5;
         }
 
-        // Create multiple independent trails for this path
-        for (let t = 0; t < config.trailsPerPath; t++) {
-          trails.push(new Trail(path, fill, letterGroup));
+        trail.headPosition = (staggerRatio * trail.pathLength) % trail.pathLength;
+        trail._updateVisuals();
+
+        trails.push(trail);
+      });
+
+      /**
+       * Main animation loop - optimized for 60fps smoothness
+       */
+      function animate(currentTime) {
+        if (lastTime === 0) {
+          lastTime = currentTime;
+          animationId = requestAnimationFrame(animate);
+          return;
         }
-      });
 
-      // Mouse tracking
-      logo.addEventListener('mousemove', (e) => {
-        const rect = logo.getBoundingClientRect();
-        mouseX = e.clientX - rect.left;
-        mouseY = e.clientY - rect.top;
-      });
+        const rawDelta = currentTime - lastTime;
+        lastTime = currentTime;
 
-      logo.addEventListener('mouseleave', () => {
-        mouseX = -1000;
-        mouseY = -1000;
-      });
-
-      // Calculate hover acceleration for a letter
-      function getHoverMultiplier(letterGroup) {
-        if (mouseX < 0 || !letterGroup) return 1;
-
-        const rect = letterGroup.getBoundingClientRect();
-        const logoRect = logo.getBoundingClientRect();
-        const centerX = rect.left + rect.width / 2 - logoRect.left;
-        const centerY = rect.top + rect.height / 2 - logoRect.top;
-        const distance = Math.hypot(mouseX - centerX, mouseY - centerY);
-
-        if (distance < config.hoverRadius) {
-          const proximity = 1 - (distance / config.hoverRadius);
-          return 1 + (proximity * (config.hoverBoost - 1));
-        }
-        return 1;
-      }
-
-      // Group trails by path for combined rendering
-      const pathTrailsMap = new Map();
-      trails.forEach(trail => {
-        if (!pathTrailsMap.has(trail.path)) {
-          pathTrailsMap.set(trail.path, []);
-        }
-        pathTrailsMap.get(trail.path).push(trail);
-      });
-
-      // Main animation loop - continuous, never stops
-      function animate(timestamp) {
-        if (!lastTimestamp) lastTimestamp = timestamp;
-        const deltaTime = Math.min(timestamp - lastTimestamp, 50); // Cap delta to prevent jumps
-        lastTimestamp = timestamp;
+        // Exponential smoothing for consistent timing
+        smoothDelta = smoothDelta * CONFIG.frameSmoothing + rawDelta * (1 - CONFIG.frameSmoothing);
+        const delta = Math.min(smoothDelta, 32);
 
         // Update all trails
-        trails.forEach(trail => {
-          const hoverMultiplier = getHoverMultiplier(trail.letterGroup);
-          trail.update(deltaTime, hoverMultiplier);
-        });
-
-        // Render each path with its primary trail (first in array)
-        // The multiple trails create visual complexity as they're at different positions
-        pathTrailsMap.forEach((pathTrails, path) => {
-          // Use the first trail's position for the visible stroke
-          // This creates the illusion of multiple independent cycles
-          const primaryTrail = pathTrails[0];
-
-          // Randomly pick which trail is "active" occasionally for variety
-          const activeIndex = Math.floor(Date.now() / 500) % pathTrails.length;
-          const activeTrail = pathTrails[activeIndex];
-
-          path.style.strokeDashoffset = activeTrail.getOffset();
-        });
+        for (let i = 0; i < trails.length; i++) {
+          trails[i].update(delta);
+        }
 
         animationId = requestAnimationFrame(animate);
       }
 
-      // Start animation immediately
+      // Start animation
       animationId = requestAnimationFrame(animate);
 
-      // Handle page visibility
+      // Pause when page is hidden
       document.addEventListener('visibilitychange', () => {
-        if (document.hidden && animationId) {
-          cancelAnimationFrame(animationId);
-          animationId = null;
-        } else if (!document.hidden && !animationId) {
-          lastTimestamp = 0;
-          animationId = requestAnimationFrame(animate);
+        if (document.hidden) {
+          if (animationId) {
+            cancelAnimationFrame(animationId);
+            animationId = null;
+          }
+        } else {
+          if (!animationId) {
+            lastTime = 0;
+            smoothDelta = 16.67;
+            animationId = requestAnimationFrame(animate);
+          }
         }
       });
     })();
