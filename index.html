@@ -38,6 +38,7 @@
       --space-md: 16px;
       --space-lg: 24px;
       --space-xl: 40px;
+      --space-2xl: 64px;
 
       /* Typography scale */
       --text-xs: 12px;
@@ -123,10 +124,17 @@
 
     /* ===== MAIN LAYOUT ===== */
     .main-layout {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: var(--space-xl);
-      align-items: start;
+      position: relative;
+      /* Grid definition moved to responsive sections, default is block/flex */
+      width: 100%;
+    }
+
+    /* Column wrapper for Header + Main */
+    .content-column {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2xl);
+      /* Matches original container gap */
     }
 
     /* ===== BUSINESS CARDS ===== */
@@ -271,8 +279,25 @@
       font-size: var(--text-sm);
       font-weight: 500;
       transition: all var(--timing-fast) ease;
-      will-change: transform;
-      animation: float-gentle-light 4s ease-in-out infinite;
+      will-change: transform, opacity;
+
+      /* Combined animations: Entrance (roll-out) + Float (continuous) */
+      animation:
+        roll-out 0.4s ease-out backwards,
+        float-gentle-light 4s ease-in-out infinite;
+    }
+
+    /* Roll-out entrance animation */
+    @keyframes roll-out {
+      0% {
+        opacity: 0;
+        transform: translateY(-20px) rotateX(-10deg);
+      }
+
+      100% {
+        opacity: 1;
+        transform: translateY(0) rotateX(0);
+      }
     }
 
     /* Lighter floating for personal links */
@@ -288,48 +313,55 @@
       }
     }
 
+    /* Staggered delays for both animations */
+    /* Note: nth-child starts at 2 because the title <h2> is child 1 */
     .personal-link:nth-child(2) {
-      animation-delay: 0.2s;
+      animation-delay: 0.05s, 1s;
+      /* Entrance delay, Float delay */
     }
 
     .personal-link:nth-child(3) {
-      animation-delay: 0.4s;
+      animation-delay: 0.1s, 1.1s;
     }
 
     .personal-link:nth-child(4) {
-      animation-delay: 0.6s;
+      animation-delay: 0.15s, 1.2s;
     }
 
     .personal-link:nth-child(5) {
-      animation-delay: 0.8s;
+      animation-delay: 0.2s, 1.3s;
     }
 
     .personal-link:nth-child(6) {
-      animation-delay: 1.0s;
+      animation-delay: 0.25s, 1.4s;
     }
 
     .personal-link:nth-child(7) {
-      animation-delay: 1.2s;
+      animation-delay: 0.3s, 1.5s;
     }
 
     .personal-link:nth-child(8) {
-      animation-delay: 1.4s;
+      animation-delay: 0.35s, 1.6s;
     }
 
     .personal-link:nth-child(9) {
-      animation-delay: 1.6s;
+      animation-delay: 0.4s, 1.7s;
     }
 
     .personal-link:nth-child(10) {
-      animation-delay: 1.8s;
+      animation-delay: 0.45s, 1.8s;
     }
 
     .personal-link:nth-child(11) {
-      animation-delay: 2.0s;
+      animation-delay: 0.5s, 1.9s;
     }
 
     .personal-link:nth-child(12) {
-      animation-delay: 2.2s;
+      animation-delay: 0.55s, 2.0s;
+    }
+
+    .personal-link:nth-child(13) {
+      animation-delay: 0.6s, 2.1s;
     }
 
     .personal-link:hover {
@@ -366,7 +398,10 @@
     /* Desktop: Sidebar layout */
     @media (min-width: 960px) {
       .main-layout {
+        display: grid;
         grid-template-columns: 1fr 240px;
+        gap: var(--space-xl);
+        align-items: start;
       }
 
       .business-cards {
@@ -398,6 +433,10 @@
     @media (max-width: 559px) {
       .container {
         padding: var(--space-lg);
+        gap: var(--space-lg);
+      }
+
+      .content-column {
         gap: var(--space-lg);
       }
 
@@ -651,59 +690,63 @@
 
 <body>
   <div class="container">
-    <!-- Header: Minimal profile -->
-    <header class="header">
-      <img src="assets/img/pfp-square.jpeg" alt="Shane Walker" class="profile-photo" />
-      <div class="header-content">
-        <h1>Shane Walker</h1>
-        <p class="bio">Entrepreneur • Dallas, TX</p>
-      </div>
-    </header>
-
     <!-- Main content area -->
     <div class="main-layout">
-      <!-- Business cards: Primary focus -->
-      <main>
-        <div class="business-cards">
-          <!-- The Media Hangar -->
-          <a href="https://themediahangar.com" target="_blank" rel="noopener" class="business-card"
-            aria-label="The Media Hangar - Real estate media and production">
-            <img
-              src="https://images.squarespace-cdn.com/content/v1/66071afd6c7fa060a948fdbe/6d140f5a-8ae8-4009-811e-017a60287cf0/TMH+Logo_White+Logo.png?format=300w"
-              alt="The Media Hangar" class="business-logo" />
-            <h2>The Media Hangar</h2>
-            <p class="description">Real estate media & production in Dallas-Fort Worth</p>
-            <span class="cta">Visit site →</span>
-          </a>
-
-          <!-- Dink Boys -->
-          <a href="https://dinkboys.com" target="_blank" rel="noopener" class="business-card"
-            aria-label="Dink Boys - Pickleball brand">
-            <img src="assets/img/dink-boys-logo.png" alt="Dink Boys" class="business-logo" />
-            <h2>Dink Boys</h2>
-            <p class="description">Pickleball brand for the modern athlete</p>
-            <span class="cta">Visit site →</span>
-          </a>
-
-          <!-- DFFW Daily -->
-          <a href="https://dffwdaily.com" target="_blank" rel="noopener" class="business-card"
-            aria-label="DFFW Daily - Dallas-Fort Worth news and stories">
-            <img src="https://dffwdaily.com/wp-content/uploads/2025/07/cropped-IMG_0087-128x128.png" alt="DFFW Daily"
-              class="business-logo" />
-            <h2>DFFW Daily</h2>
-            <p class="description">Dallas-Fort Worth news, stories & local updates</p>
-            <span class="cta">Visit site →</span>
-          </a>
-        </div>
-
-        <!-- Random X Post Section -->
-        <section class="random-tweet-section">
-          <h2 class="section-title">From X</h2>
-          <div id="tweet-container" class="tweet-display">
-            <div class="tweet-loading">Loading...</div>
+      <!-- Left Column: Header + Main -->
+      <div class="content-column">
+        <!-- Header: Minimal profile -->
+        <header class="header">
+          <img src="assets/img/pfp-square.jpeg" alt="Shane Walker" class="profile-photo" />
+          <div class="header-content">
+            <h1>Shane Walker</h1>
+            <p class="bio">Entrepreneur • Dallas, TX</p>
           </div>
-        </section>
-      </main>
+        </header>
+
+        <!-- Business cards: Primary focus -->
+        <main>
+          <div class="business-cards">
+            <!-- The Media Hangar -->
+            <a href="https://themediahangar.com" target="_blank" rel="noopener" class="business-card"
+              aria-label="The Media Hangar - Real estate media and production">
+              <img
+                src="https://images.squarespace-cdn.com/content/v1/66071afd6c7fa060a948fdbe/6d140f5a-8ae8-4009-811e-017a60287cf0/TMH+Logo_White+Logo.png?format=300w"
+                alt="The Media Hangar" class="business-logo" />
+              <h2>The Media Hangar</h2>
+              <p class="description">Real estate media & production in Dallas-Fort Worth</p>
+              <span class="cta">Visit site →</span>
+            </a>
+
+            <!-- Dink Boys -->
+            <a href="https://dinkboys.com" target="_blank" rel="noopener" class="business-card"
+              aria-label="Dink Boys - Pickleball brand">
+              <img src="assets/img/dink-boys-logo.png" alt="Dink Boys" class="business-logo" />
+              <h2>Dink Boys</h2>
+              <p class="description">Pickleball brand for the modern athlete</p>
+              <span class="cta">Visit site →</span>
+            </a>
+
+            <!-- DFFW Daily -->
+            <a href="https://dffwdaily.com" target="_blank" rel="noopener" class="business-card"
+              aria-label="DFFW Daily - Dallas-Fort Worth news and stories">
+              <img src="https://dffwdaily.com/wp-content/uploads/2025/07/cropped-IMG_0087-128x128.png" alt="DFFW Daily"
+                class="business-logo" />
+              <h2>DFFW Daily</h2>
+              <p class="description">Dallas-Fort Worth news, stories & local updates</p>
+              <span class="cta">Visit site →</span>
+            </a>
+          </div>
+
+          <!-- Random X Post Section -->
+          <section class="random-tweet-section">
+            <h2 class="section-title">From X</h2>
+            <div id="tweet-container" class="tweet-display">
+              <div class="tweet-loading">Loading...</div>
+            </div>
+          </section>
+
+        </main>
+      </div> <!-- End content-column -->
 
       <!-- Personal links: Sidebar -->
       <aside aria-label="Personal links">
