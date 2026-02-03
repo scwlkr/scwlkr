@@ -194,10 +194,13 @@
 
     /* ===== TRON LIGHT-CYCLE LOGO ANIMATION ===== */
     .animated-logo {
-      width: 100%;
-      max-width: 400px;
+      width: 75vw;
+      max-width: none;
       height: auto;
-      margin: 0 auto var(--space-lg);
+      /* Center the logo even if it overflows container */
+      margin-left: calc((100% - 75vw) / 2);
+      margin-right: calc((100% - 75vw) / 2);
+      margin-bottom: var(--space-lg);
       display: block;
     }
 
@@ -214,7 +217,7 @@
     /* Stroke paths for Tron animation */
     .animated-logo .letter-stroke {
       fill: none;
-      stroke-width: 8;
+      stroke-width: 12;
       stroke-linecap: round;
       stroke-linejoin: round;
       opacity: 0;
@@ -1359,6 +1362,7 @@
     initColorCopy();
 
     // ===== TRON LIGHT-CYCLE LOGO ANIMATION =====
+    // Continuous, never-stopping, generative animation
     (function initTronAnimation() {
       const logo = document.getElementById('animatedLogo');
       if (!logo) return;
@@ -1372,52 +1376,87 @@
       const strokePaths = logo.querySelectorAll('.letter-stroke');
       const fillPaths = logo.querySelectorAll('.letter-fill');
 
-      // Animation configuration
+      // Configuration for continuous animation
       const config = {
-        cycleDuration: 8000,      // 8 seconds per full cycle
-        drawDuration: 5000,       // 5 seconds to draw
-        holdDuration: 2000,       // 2 seconds to hold
-        fadeDuration: 1000,       // 1 second to fade
-        trailLength: 0.15,        // Trail visible ratio (15% of path)
-        minSpeed: 0.5,            // Minimum animation speed multiplier
-        maxSpeed: 2.5,            // Maximum speed on hover
-        hoverRadius: 150          // Pixel radius for hover acceleration
+        trailLength: 0.12,        // Trail visible ratio (12% of path)
+        baseSpeed: 0.0004,        // Base speed (path units per ms)
+        speedVariance: 0.6,       // Speed can vary ±60%
+        trailsPerPath: 3,         // Multiple trails per letter
+        hoverRadius: 200,         // Pixel radius for hover acceleration
+        hoverBoost: 2.5,          // Speed multiplier on hover
+        fillOpacity: 0.15         // Subtle fill visibility
       };
 
-      // State
+      // Mouse state
       let mouseX = -1000;
       let mouseY = -1000;
       let animationId = null;
-      let cycleStartTime = 0;
+      let lastTimestamp = 0;
 
-      // Initialize each stroke path
-      const pathData = [];
+      // Trail class - each trail is an independent "light cycle"
+      class Trail {
+        constructor(pathElement, fillElement, letterGroup) {
+          this.path = pathElement;
+          this.fill = fillElement;
+          this.letterGroup = letterGroup;
+          this.length = pathElement.getTotalLength();
+          this.reset();
+        }
+
+        reset() {
+          // Each trail gets completely random parameters
+          this.position = Math.random() * this.length;
+          this.speed = config.baseSpeed * (1 + (Math.random() - 0.5) * 2 * config.speedVariance);
+          this.direction = Math.random() > 0.3 ? 1 : -1; // 70% forward, 30% reverse
+          this.trailSize = this.length * config.trailLength * (0.5 + Math.random());
+        }
+
+        update(deltaTime, hoverMultiplier) {
+          // Move the trail along the path
+          const effectiveSpeed = this.speed * hoverMultiplier * this.direction;
+          this.position += effectiveSpeed * deltaTime;
+
+          // Wrap around when reaching ends (continuous loop)
+          if (this.position > this.length) {
+            this.position = this.position % this.length;
+            // Randomize speed slightly on each loop
+            this.speed = config.baseSpeed * (1 + (Math.random() - 0.5) * 2 * config.speedVariance);
+          } else if (this.position < 0) {
+            this.position = this.length + (this.position % this.length);
+            this.speed = config.baseSpeed * (1 + (Math.random() - 0.5) * 2 * config.speedVariance);
+          }
+        }
+
+        getOffset() {
+          // Convert position to stroke-dashoffset
+          return this.length - this.position;
+        }
+      }
+
+      // Create multiple trails per path for richer animation
+      const trails = [];
       strokePaths.forEach((path, index) => {
         const length = path.getTotalLength();
+        const letterGroup = path.closest('[data-letter]');
+        const fill = fillPaths[index];
+
+        // Set up the path styling
         path.style.strokeDasharray = `${length * config.trailLength} ${length}`;
-        path.style.strokeDashoffset = length;
         path.style.filter = 'url(#tronGlow)';
+        path.style.opacity = '1';
 
-        // Random starting point for each path (0-100% of path length)
-        const randomStart = Math.random();
-        // Random speed variation (0.7x to 1.3x)
-        const speedVariation = 0.7 + Math.random() * 0.6;
-        // Random delay before starting (0-20% of cycle)
-        const delayRatio = Math.random() * 0.2;
+        // Show fill at low opacity
+        if (fill) {
+          fill.style.opacity = config.fillOpacity;
+        }
 
-        pathData.push({
-          element: path,
-          fillElement: fillPaths[index],
-          length,
-          randomStart,
-          speedVariation,
-          delayRatio,
-          // Track which letter for hover detection
-          letterGroup: path.closest('[data-letter]')
-        });
+        // Create multiple independent trails for this path
+        for (let t = 0; t < config.trailsPerPath; t++) {
+          trails.push(new Trail(path, fill, letterGroup));
+        }
       });
 
-      // Mouse tracking for hover acceleration
+      // Mouse tracking
       logo.addEventListener('mousemove', (e) => {
         const rect = logo.getBoundingClientRect();
         mouseX = e.clientX - rect.left;
@@ -1429,107 +1468,71 @@
         mouseY = -1000;
       });
 
-      // Calculate distance from mouse to letter center
-      function getMouseProximity(letterGroup) {
-        if (mouseX < 0) return 1; // No hover, normal speed
+      // Calculate hover acceleration for a letter
+      function getHoverMultiplier(letterGroup) {
+        if (mouseX < 0 || !letterGroup) return 1;
 
         const rect = letterGroup.getBoundingClientRect();
         const logoRect = logo.getBoundingClientRect();
         const centerX = rect.left + rect.width / 2 - logoRect.left;
         const centerY = rect.top + rect.height / 2 - logoRect.top;
-
         const distance = Math.hypot(mouseX - centerX, mouseY - centerY);
 
-        // Scale: closer = faster (up to maxSpeed)
         if (distance < config.hoverRadius) {
           const proximity = 1 - (distance / config.hoverRadius);
-          return 1 + (proximity * (config.maxSpeed - 1));
+          return 1 + (proximity * (config.hoverBoost - 1));
         }
         return 1;
       }
 
-      // Main animation loop
+      // Group trails by path for combined rendering
+      const pathTrailsMap = new Map();
+      trails.forEach(trail => {
+        if (!pathTrailsMap.has(trail.path)) {
+          pathTrailsMap.set(trail.path, []);
+        }
+        pathTrailsMap.get(trail.path).push(trail);
+      });
+
+      // Main animation loop - continuous, never stops
       function animate(timestamp) {
-        if (!cycleStartTime) cycleStartTime = timestamp;
+        if (!lastTimestamp) lastTimestamp = timestamp;
+        const deltaTime = Math.min(timestamp - lastTimestamp, 50); // Cap delta to prevent jumps
+        lastTimestamp = timestamp;
 
-        const elapsed = timestamp - cycleStartTime;
-        const cycleProgress = (elapsed % config.cycleDuration) / config.cycleDuration;
-
-        pathData.forEach((data) => {
-          const {
-            element,
-            fillElement,
-            length,
-            randomStart,
-            speedVariation,
-            delayRatio,
-            letterGroup
-          } = data;
-
-          // Get speed multiplier from mouse proximity
-          const hoverSpeed = letterGroup ? getMouseProximity(letterGroup) : 1;
-
-          // Calculate effective progress with delay and speed variations
-          let effectiveProgress = (cycleProgress - delayRatio) * speedVariation * hoverSpeed;
-
-          // Normalize to draw phase (first 60% of cycle is drawing)
-          const drawPhaseRatio = config.drawDuration / config.cycleDuration;
-          const holdPhaseEnd = (config.drawDuration + config.holdDuration) / config.cycleDuration;
-
-          if (effectiveProgress < 0) {
-            // Still in delay - not visible
-            element.style.opacity = '0';
-            fillElement.style.opacity = '0';
-          } else if (effectiveProgress < drawPhaseRatio) {
-            // Drawing phase
-            const drawProgress = effectiveProgress / drawPhaseRatio;
-
-            // Calculate stroke offset - trail moves along path
-            const offset = length - (drawProgress * length * 1.2);
-            element.style.strokeDashoffset = Math.max(0, offset);
-            element.style.opacity = '1';
-
-            // Gradually reveal fill as stroke progresses
-            fillElement.style.opacity = Math.min(0.3, drawProgress * 0.4);
-          } else if (effectiveProgress < holdPhaseEnd) {
-            // Hold phase - fully visible
-            element.style.strokeDashoffset = '0';
-            element.style.opacity = '1';
-            fillElement.style.opacity = '0.3';
-          } else if (effectiveProgress < 1) {
-            // Fade phase
-            const fadeProgress = (effectiveProgress - holdPhaseEnd) / (1 - holdPhaseEnd);
-            element.style.opacity = 1 - fadeProgress;
-            fillElement.style.opacity = 0.3 * (1 - fadeProgress);
-          } else {
-            // Beyond cycle, start fresh with new randomness
-            element.style.opacity = '0';
-            fillElement.style.opacity = '0';
-          }
+        // Update all trails
+        trails.forEach(trail => {
+          const hoverMultiplier = getHoverMultiplier(trail.letterGroup);
+          trail.update(deltaTime, hoverMultiplier);
         });
 
-        // Randomize start points at each cycle reset
-        if (elapsed > 0 && elapsed % config.cycleDuration < 16) {
-          pathData.forEach(data => {
-            data.randomStart = Math.random();
-            data.speedVariation = 0.7 + Math.random() * 0.6;
-            data.delayRatio = Math.random() * 0.2;
-          });
-        }
+        // Render each path with its primary trail (first in array)
+        // The multiple trails create visual complexity as they're at different positions
+        pathTrailsMap.forEach((pathTrails, path) => {
+          // Use the first trail's position for the visible stroke
+          // This creates the illusion of multiple independent cycles
+          const primaryTrail = pathTrails[0];
+
+          // Randomly pick which trail is "active" occasionally for variety
+          const activeIndex = Math.floor(Date.now() / 500) % pathTrails.length;
+          const activeTrail = pathTrails[activeIndex];
+
+          path.style.strokeDashoffset = activeTrail.getOffset();
+        });
 
         animationId = requestAnimationFrame(animate);
       }
 
-      // Start animation
+      // Start animation immediately
       animationId = requestAnimationFrame(animate);
 
-      // Cleanup on page hide
+      // Handle page visibility
       document.addEventListener('visibilitychange', () => {
         if (document.hidden && animationId) {
           cancelAnimationFrame(animationId);
           animationId = null;
         } else if (!document.hidden && !animationId) {
-          cycleStartTime = 0;
+          lastTimestamp = 0;
           animationId = requestAnimationFrame(animate);
         }
       });
