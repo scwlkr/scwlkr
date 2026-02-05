@@ -258,26 +258,186 @@
       object-fit: contain;
     }
 
-    /* ===== WALLPAPER PREVIEWS ===== */
-    .wallpaper-preview {
-      height: 140px;
-      background: rgba(0, 0, 0, 0.5);
+    /* ===== DEVICE MOCKUPS ===== */
+    .device-mockup {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: transparent;
     }
 
-    .wallpaper-preview img {
-      max-width: 100%;
-      max-height: 100%;
-      width: auto;
-      height: auto;
-      object-fit: contain;
+    /* Laptop Mockup */
+    .device-mockup-laptop {
+      width: 100%;
     }
 
-    .wallpaper-preview.portrait {
-      height: 180px;
+    .laptop-frame {
+      position: relative;
+      width: 100%;
+      max-width: 320px;
+      margin: 0 auto;
     }
 
-    .wallpaper-preview.portrait img {
-      max-height: 160px;
+    .laptop-screen {
+      position: relative;
+      background: #1a1a1a;
+      border-radius: 8px 8px 0 0;
+      padding: 12px 12px 8px 12px;
+      box-shadow: 
+        0 -2px 20px rgba(0, 0, 0, 0.4),
+        inset 0 0 0 2px rgba(60, 60, 60, 0.5);
+    }
+
+    .laptop-screen::before {
+      content: '';
+      position: absolute;
+      top: 6px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 6px;
+      height: 6px;
+      background: #2a2a2a;
+      border-radius: 50%;
+      box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.5);
+    }
+
+    .laptop-screen-inner {
+      position: relative;
+      background: #000;
+      border-radius: 4px;
+      overflow: hidden;
+      aspect-ratio: 16 / 10;
+      box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .laptop-screen-inner img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .laptop-base {
+      position: relative;
+      height: 12px;
+      background: linear-gradient(to bottom, #2a2a2a 0%, #1a1a1a 100%);
+      border-radius: 0 0 4px 4px;
+      box-shadow: 
+        0 4px 15px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+
+    .laptop-base::before {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60px;
+      height: 4px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 2px;
+    }
+
+    .laptop-keyboard {
+      position: relative;
+      height: 8px;
+      background: linear-gradient(to bottom, #1a1a1a 0%, #0f0f0f 100%);
+      border-radius: 0 0 8px 8px;
+      margin: 0 10px;
+      box-shadow: 
+        0 6px 20px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    }
+
+    /* iPhone Mockup */
+    .device-mockup-iphone {
+      width: 100%;
+    }
+
+    .iphone-frame {
+      position: relative;
+      width: 140px;
+      margin: 0 auto;
+      background: #1a1a1a;
+      border-radius: 28px;
+      padding: 8px;
+      box-shadow: 
+        0 10px 40px rgba(0, 0, 0, 0.4),
+        inset 0 0 0 2px rgba(60, 60, 60, 0.4),
+        0 0 0 1px rgba(80, 80, 80, 0.2);
+    }
+
+    .iphone-screen {
+      position: relative;
+      background: #000;
+      border-radius: 20px;
+      overflow: hidden;
+      aspect-ratio: 9 / 19.5;
+    }
+
+    .iphone-screen img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .iphone-notch {
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 22px;
+      background: #1a1a1a;
+      border-radius: 12px;
+      z-index: 10;
+    }
+
+    .iphone-notch::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 16px;
+      transform: translateY(-50%);
+      width: 8px;
+      height: 8px;
+      background: #0a0a0a;
+      border-radius: 50%;
+      box-shadow: inset 0 0 2px rgba(35, 206, 107, 0.2);
+    }
+
+    .iphone-home-indicator {
+      position: absolute;
+      bottom: 6px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 40%;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 2px;
+    }
+
+    /* Wallpapers grid - 2 column for devices */
+    #wallpapers .variants-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 32px;
+      max-width: 700px;
+    }
+
+    @media (max-width: 600px) {
+      #wallpapers .variants-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .laptop-frame {
+        max-width: 280px;
+      }
+      
+      .iphone-frame {
+        width: 120px;
+      }
     }
 
     /* ===== BRICK BASE STYLES ===== */
@@ -1333,10 +1493,18 @@
         <p class="section-intro">Brand wallpapers for desktop and mobile.</p>
 
         <div class="variants-grid">
-          <!-- Desktop Widescreen -->
+          <!-- Desktop Wallpaper - Laptop Mockup -->
           <div class="variant-brick">
-            <div class="variant-preview wallpaper-preview">
-              <img src="../assets/img/scwlkr_full_screen.png" alt="Desktop wallpaper" />
+            <div class="device-mockup device-mockup-laptop">
+              <div class="laptop-frame">
+                <div class="laptop-screen">
+                  <div class="laptop-screen-inner">
+                    <img src="../assets/img/scwlkr_full_screen.png" alt="Desktop wallpaper" />
+                  </div>
+                </div>
+                <div class="laptop-base"></div>
+                <div class="laptop-keyboard"></div>
+              </div>
             </div>
             <div class="variant-info">
               <span class="variant-size">3456 x 2234</span>
@@ -1347,30 +1515,22 @@
             </a>
           </div>
 
-          <!-- iPhone -->
+          <!-- iPhone Wallpaper - iPhone Mockup -->
           <div class="variant-brick">
-            <div class="variant-preview wallpaper-preview portrait">
-              <img src="../assets/img/scwlkr_iphone.png" alt="iPhone wallpaper" />
+            <div class="device-mockup device-mockup-iphone">
+              <div class="iphone-frame">
+                <div class="iphone-screen">
+                  <div class="iphone-notch"></div>
+                  <img src="../assets/img/scwlkr_iphone.png" alt="iPhone wallpaper" />
+                  <div class="iphone-home-indicator"></div>
+                </div>
+              </div>
             </div>
             <div class="variant-info">
               <span class="variant-size">1320 x 2868</span>
               <span class="variant-format">iPhone</span>
             </div>
             <a href="../assets/img/scwlkr_iphone.png" download class="download-btn">
-              Download &rarr;
-            </a>
-          </div>
-
-          <!-- Square -->
-          <div class="variant-brick">
-            <div class="variant-preview wallpaper-preview">
-              <img src="../assets/img/scwlkr_full-square.png" alt="Square format" />
-            </div>
-            <div class="variant-info">
-              <span class="variant-size">4000 x 4000</span>
-              <span class="variant-format">Square</span>
-            </div>
-            <a href="../assets/img/scwlkr_full-square.png" download class="download-btn">
               Download &rarr;
             </a>
           </div>
