@@ -1619,8 +1619,8 @@
     })();
 
     // ===== SPOTLIGHT BACKLIGHT EFFECT =====
-    // A single spotlight that follows the mouse and illuminates letters from behind
-    // The spotlight is a blurred ellipse that acts as a mask for the glow layer
+    // Desktop: spotlight follows mouse
+    // Mobile: spotlight moves randomly since there's no hover
     (function initSpotlightEffect() {
       'use strict';
 
@@ -1633,6 +1633,9 @@
         return;
       }
 
+      // Detect if device has no hover capability (touch devices)
+      const isMobile = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+
       // Animation state
       let currentX = -1000;
       let currentY = -1000;
@@ -1640,6 +1643,14 @@
       let targetY = -1000;
       let animationId = null;
       let isHovering = false;
+
+      // Letter area bounds in path coordinate space (for random mobile animation)
+      const letterBounds = {
+        minX: 200,
+        maxX: 3200,
+        minY: 4700,
+        maxY: 5400
+      };
 
       /**
        * Convert screen coordinates to SVG viewBox coordinates
@@ -1666,9 +1677,19 @@
       }
 
       /**
-       * Animation loop - smoothly move spotlight to target position
+       * Generate a random target position within the letter area
        */
-      function animate() {
+      function getRandomTarget() {
+        return {
+          x: letterBounds.minX + Math.random() * (letterBounds.maxX - letterBounds.minX),
+          y: letterBounds.minY + Math.random() * (letterBounds.maxY - letterBounds.minY)
+        };
+      }
+
+      /**
+       * Animation loop for desktop - smoothly move spotlight to target position
+       */
+      function animateDesktop() {
         const lerpFactor = isHovering ? 0.12 : 0.06;
 
         const dx = targetX - currentX;
@@ -1681,7 +1702,7 @@
           spotlight.setAttribute('cx', currentX);
           spotlight.setAttribute('cy', currentY);
 
-          animationId = requestAnimationFrame(animate);
+          animationId = requestAnimationFrame(animateDesktop);
         } else {
           currentX = targetX;
           currentY = targetY;
@@ -1689,7 +1710,7 @@
           spotlight.setAttribute('cy', currentY);
 
           if (isHovering) {
-            animationId = requestAnimationFrame(animate);
+            animationId = requestAnimationFrame(animateDesktop);
           } else {
             animationId = null;
           }
@@ -1697,16 +1718,42 @@
       }
 
       /**
+       * Animation loop for mobile - gentle random wandering motion
+       */
+      function animateMobile() {
+        const lerpFactor = 0.015; // Slow, gentle movement
+
+        const dx = targetX - currentX;
+        const dy = targetY - currentY;
+
+        // Move toward target
+        currentX += dx * lerpFactor;
+        currentY += dy * lerpFactor;
+
+        spotlight.setAttribute('cx', currentX);
+        spotlight.setAttribute('cy', currentY);
+
+        // If close to target, pick a new random target
+        if (Math.abs(dx) < 50 && Math.abs(dy) < 50) {
+          const newTarget = getRandomTarget();
+          targetX = newTarget.x;
+          targetY = newTarget.y;
+        }
+
+        animationId = requestAnimationFrame(animateMobile);
+      }
+
+      /**
        * Start animation if not already running
        */
       function ensureAnimating() {
         if (!animationId) {
-          animationId = requestAnimationFrame(animate);
+          animationId = requestAnimationFrame(isMobile ? animateMobile : animateDesktop);
         }
       }
 
       /**
-       * Mouse move handler
+       * Mouse move handler (desktop only)
        */
       function handleMouseMove(e) {
         const svgPoint = screenToSVG(e.clientX, e.clientY);
@@ -1721,7 +1768,7 @@
       }
 
       /**
-       * Mouse enter handler
+       * Mouse enter handler (desktop only)
        */
       function handleMouseEnter() {
         isHovering = true;
@@ -1729,7 +1776,7 @@
       }
 
       /**
-       * Mouse leave handler - move spotlight off screen
+       * Mouse leave handler (desktop only) - move spotlight off screen
        */
       function handleMouseLeave() {
         isHovering = false;
@@ -1738,19 +1785,38 @@
         ensureAnimating();
       }
 
-      // Attach event listeners to the logo wrapper for better hit detection
-      const wrapper = logo.closest('.animated-logo-wrapper');
-      const target = wrapper || logo;
+      // Initialize based on device type
+      if (isMobile) {
+        // Mobile: start with random position and begin wandering animation
+        const initialTarget = getRandomTarget();
+        currentX = initialTarget.x;
+        currentY = initialTarget.y;
+        spotlight.setAttribute('cx', currentX);
+        spotlight.setAttribute('cy', currentY);
 
-      target.addEventListener('mousemove', handleMouseMove, { passive: true });
-      target.addEventListener('mouseenter', handleMouseEnter);
-      target.addEventListener('mouseleave', handleMouseLeave);
+        // Pick first target and start animation
+        const firstTarget = getRandomTarget();
+        targetX = firstTarget.x;
+        targetY = firstTarget.y;
+        animationId = requestAnimationFrame(animateMobile);
+      } else {
+        // Desktop: attach mouse event listeners
+        const wrapper = logo.closest('.animated-logo-wrapper');
+        const target = wrapper || logo;
+
+        target.addEventListener('mousemove', handleMouseMove, { passive: true });
+        target.addEventListener('mouseenter', handleMouseEnter);
+        target.addEventListener('mouseleave', handleMouseLeave);
+      }
 
       // Pause animation when page is hidden
       document.addEventListener('visibilitychange', () => {
         if (document.hidden && animationId) {
           cancelAnimationFrame(animationId);
           animationId = null;
+        } else if (!document.hidden && isMobile) {
+          // Resume mobile animation when page becomes visible again
+          ensureAnimating();
         }
       });
     })();
