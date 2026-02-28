@@ -1,4 +1,22 @@
 {
+  "rewrites": [
+    {
+      "source": "/bubba-dashboard/assets/(.*)",
+      "destination": "/bubba-dashboard/dist/assets/$1"
+    },
+    {
+      "source": "/bubba-dashboard/vite.svg",
+      "destination": "/bubba-dashboard/dist/vite.svg"
+    },
+    {
+      "source": "/bubba-dashboard/(.*)",
+      "destination": "/bubba-dashboard/dist/index.html"
+    },
+    {
+      "source": "/bubba-dashboard",
+      "destination": "/bubba-dashboard/dist/index.html"
+    }
+  ],
   "headers": [
     {
       "source": "/api/tweets",
