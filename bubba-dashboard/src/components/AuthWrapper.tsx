@@ -7,7 +7,7 @@ interface AuthWrapperProps {
 }
 
 // Simple context to pass the location ID down to the LocationView
-export const AuthContext = React.createContext<{ locationId: number | null }>({ locationId: null });
+export const AuthContext = React.createContext<{ locationId: number | null, changeLocation: (id: number) => void }>({ locationId: null, changeLocation: () => { } });
 
 const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
     const location = useLocation();
@@ -23,9 +23,27 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
     const [adminPinInput, setAdminPinInput] = useState('');
     const [error, setError] = useState('');
     const [loggedInLocationId, setLoggedInLocationId] = useState<number | null>(() => {
-        const saved = localStorage.getItem('bubba_location_id');
+        const params = new URLSearchParams(window.location.search);
+        const locParam = params.get('loc');
+        if (locParam) {
+            const id = parseInt(locParam, 10);
+            if (!isNaN(id) && id > 0 && id <= 16) {
+                localStorage.setItem('scwlkr_bubba_current_loc', id.toString());
+                return id;
+            }
+        }
+
+        const saved = localStorage.getItem('scwlkr_bubba_current_loc');
         return saved ? parseInt(saved, 10) : null;
     });
+
+    const changeLocation = (id: number) => {
+        if (id > 0 && id <= 16) {
+            setLoggedInLocationId(id);
+            localStorage.setItem('scwlkr_bubba_current_loc', id.toString());
+            navigate(`?loc=${id}`, { replace: true });
+        }
+    };
 
     // Hardcoded simple PIN for this phase's prototype. In production, this would be a proper hashing/auth layer.
     const ADMIN_PIN = "1234";
@@ -34,8 +52,15 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
     useEffect(() => {
         if (loggedInLocationId !== null) {
             setIsAuthenticated(true);
+
+            if (isUserRoute) {
+                const params = new URLSearchParams(window.location.search);
+                if (params.get('loc') !== loggedInLocationId.toString()) {
+                    navigate(`?loc=${loggedInLocationId}`, { replace: true });
+                }
+            }
         }
-    }, [loggedInLocationId]);
+    }, [loggedInLocationId, isUserRoute, navigate]);
 
     // If path changes and we aren't authenticated for that path, reset error
     useEffect(() => {
@@ -58,9 +83,10 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
         // Phase 4: Supporting 16 locations
         if (!isNaN(id) && id > 0 && id <= 16) {
             setLoggedInLocationId(id);
-            localStorage.setItem('bubba_location_id', id.toString());
+            localStorage.setItem('scwlkr_bubba_current_loc', id.toString());
             setIsAuthenticated(true);
             setError('');
+            navigate(`?loc=${id}`, { replace: true });
         } else {
             setError('Please enter a valid Location ID (1-16)');
         }
@@ -155,7 +181,7 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
 
     // Render children normally
     return (
-        <AuthContext.Provider value={{ locationId: loggedInLocationId }}>
+        <AuthContext.Provider value={{ locationId: loggedInLocationId, changeLocation }}>
             {children}
         </AuthContext.Provider>
     );

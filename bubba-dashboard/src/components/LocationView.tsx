@@ -1,11 +1,11 @@
-import { useState, useCallback, useEffect, useContext } from 'react';
-import { Settings, MapPin, Power, ShieldCheck, AlertTriangle, RefreshCw } from 'lucide-react';
+import { useState, useCallback, useEffect, useContext, useRef } from 'react';
+import { Settings, MapPin, Power, ShieldCheck, AlertTriangle, RefreshCw, ChevronDown } from 'lucide-react';
 import { fetchLocationStatus, toggleLocationStatus } from '../api/sheetApi';
 import { AuthContext } from './AuthWrapper';
 import { toast } from 'sonner';
 
 const LocationView = () => {
-    const { locationId } = useContext(AuthContext);
+    const { locationId, changeLocation } = useContext(AuthContext);
 
     // Local state for the toggle
     const [isOpen, setIsOpen] = useState(false);
@@ -13,6 +13,19 @@ const LocationView = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [locationName, setLocationName] = useState('Unknown Location');
     const [error, setError] = useState<string | null>(null);
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     // Initial Data Fetch
     useEffect(() => {
@@ -22,6 +35,8 @@ const LocationView = () => {
                 setIsLoading(false);
                 return;
             }
+
+            setIsLoading(true);
 
             try {
                 const data = await fetchLocationStatus(locationId);
@@ -86,7 +101,7 @@ const LocationView = () => {
         <div className="flex flex-col min-h-screen p-6 md:p-8 max-w-md mx-auto">
 
             {/* Header */}
-            <header className="flex items-center justify-between mb-8 animate-fade-in">
+            <header className="flex items-center justify-between mb-8 animate-fade-in relative z-50">
                 <div className="flex items-center gap-3">
                     <div className="bg-zinc-900 p-3 rounded-xl border border-zinc-800 shadow-sm relative">
                         <MapPin className="w-5 h-5 text-zinc-400" />
@@ -94,7 +109,44 @@ const LocationView = () => {
                     </div>
                     <div>
                         <h1 className="text-xl font-bold tracking-tight">{locationName}</h1>
-                        <p className="text-xs text-zinc-500 font-medium">Location #{locationId?.toString().padStart(2, '0')}</p>
+                        <div className="flex items-center gap-2">
+                            <p className="text-xs text-zinc-500 font-medium">Location #{locationId?.toString().padStart(2, '0')}</p>
+                            <div className="relative" ref={dropdownRef}>
+                                <button
+                                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                                    className="text-xs text-zinc-400 hover:text-white transition-colors flex items-center gap-1 cursor-pointer"
+                                    aria-label="Switch Location"
+                                >
+                                    Change <ChevronDown className="w-3 h-3" />
+                                </button>
+
+                                {isDropdownOpen && (
+                                    <div className="absolute top-6 left-0 w-44 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl py-2 z-50 animate-fade-in origin-top-left">
+                                        <div className="px-4 py-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-800/50 mb-1">
+                                            Switch Location
+                                        </div>
+                                        <div className="max-h-60 overflow-y-auto custom-scrollbar-minimal">
+                                            {Array.from({ length: 16 }, (_, i) => i + 1).map(id => (
+                                                <button
+                                                    key={id}
+                                                    onClick={() => {
+                                                        setIsDropdownOpen(false);
+                                                        changeLocation(id);
+                                                    }}
+                                                    className={`w-full text-left px-4 py-2 text-sm transition-colors cursor-pointer flex items-center gap-2 ${locationId === id
+                                                            ? 'text-brand-green bg-brand-green/10 font-medium'
+                                                            : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
+                                                        }`}
+                                                >
+                                                    <div className={`w-1.5 h-1.5 rounded-full ${locationId === id ? 'bg-brand-green' : 'bg-transparent'}`} />
+                                                    Loc #{id.toString().padStart(2, '0')}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <button className="text-zinc-500 hover:text-white transition-colors p-2 cursor-pointer">
@@ -111,8 +163,8 @@ const LocationView = () => {
                         <p className="text-xs opacity-90">{error}</p>
                         {error.includes("not found") && (
                             <p className="text-xs mt-2 underline cursor-pointer" onClick={() => {
-                                localStorage.removeItem('bubba_location_id');
-                                window.location.reload();
+                                localStorage.removeItem('scwlkr_bubba_current_loc');
+                                window.location.href = '/bubba-dashboard/user';
                             }}>Return to login</p>
                         )}
                     </div>
