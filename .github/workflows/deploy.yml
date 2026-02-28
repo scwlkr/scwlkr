@@ -32,6 +32,11 @@ jobs:
         BASE_URL: /bubba-dashboard/
       run: npm run build -- --base=/bubba-dashboard/
       
+    - name: 📝 Inject Commit Hash
+      run: |
+        sed -i "s/__DEPLOYMENT_VERSION__/${GITHUB_SHA}/g" dist/index.html
+        echo "{\"version\": \"${GITHUB_SHA}\", \"date\": \"$(date -u +'%Y-%m-%dT%H:%M:%SZ')\"}" > dist/version.json
+      
     - name: 📂 Sync files (Deploy dist folder)
       uses: SamKirkland/FTP-Deploy-Action@v4.3.4
       with:
