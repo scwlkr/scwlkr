@@ -35,9 +35,9 @@ jobs:
       
     - name: 📝 Inject Commit Hash
       run: |
-        sed -i "s/__DEPLOYMENT_VERSION__/${GITHUB_SHA}/g" bubba-dashboard/dist/index.html
-        echo "{\"version\": \"${GITHUB_SHA}\", \"date\": \"$(date -u +'%Y-%m-%dT%H:%M:%SZ')\"}" > bubba-dashboard/dist/version.json
-        ls -la bubba-dashboard/dist/
+        sed -i "s/__DEPLOYMENT_VERSION__/${GITHUB_SHA}/g" dist/index.html
+        echo "{\"version\": \"${GITHUB_SHA}\", \"date\": \"$(date -u +'%Y-%m-%dT%H:%M:%SZ')\"}" > dist/version.json
+        ls -la dist/
       
     - name: 💿 Install lftp
       run: sudo apt-get update && sudo apt-get install -y lftp
@@ -55,6 +55,6 @@ jobs:
         open -u $FTP_USERNAME,$FTP_PASSWORD $FTP_SERVER;
         mkdir -p public_html/bubba-dashboard;
         cd public_html/bubba-dashboard;
-        mirror -R --delete --verbose bubba-dashboard/dist/ ./;
+        mirror -R --delete --verbose dist/ ./;
         bye
         "
