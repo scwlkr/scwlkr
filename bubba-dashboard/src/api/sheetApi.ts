@@ -30,6 +30,25 @@ export const fetchAllUsers = async (): Promise<UserRow[]> => {
 }
 
 /**
+ * Fetches a single user row from the Bubba_DB Google Sheet by their numeric ID
+ */
+export const fetchUserStatus = async (id: number): Promise<UserRow | null> => {
+    if (!API_URL) throw new Error("API URL is missing in .env.local");
+
+    try {
+        const res = await fetch(`${API_URL}?id=${id}`);
+        if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
+
+        const data = await res.json();
+        if (data.status === 404 || !data.data) return null;
+        return data.data as UserRow;
+    } catch (error) {
+        console.error(`Error fetching user ${id}:`, error);
+        throw error;
+    }
+}
+
+/**
  * Toggles a user's status by sending a POST update to the Apps Script endpoint.
  * Content-Type is set to text/plain to bypass Apps Script's strict CORS preflight requirements.
  */
