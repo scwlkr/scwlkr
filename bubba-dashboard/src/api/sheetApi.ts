@@ -1,4 +1,4 @@
-export interface UserRow {
+export interface LocationRow {
     id: number;
     username: string;
     status: string;
@@ -12,9 +12,9 @@ export interface UserRow {
 const API_URL = import.meta.env.VITE_APPS_SCRIPT_URL;
 
 /**
- * Fetches all user rows from the Bubba_DB Google Sheet
+ * Fetches all location rows from the Bubba_DB Google Sheet
  */
-export const fetchAllUsers = async (): Promise<UserRow[]> => {
+export const fetchAllLocations = async (): Promise<LocationRow[]> => {
     if (!API_URL) throw new Error("API URL is missing in .env.local");
 
     try {
@@ -22,17 +22,17 @@ export const fetchAllUsers = async (): Promise<UserRow[]> => {
         if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
 
         const data = await res.json();
-        return data.data as UserRow[];
+        return data.data as LocationRow[];
     } catch (error) {
-        console.error("Error fetching all users:", error);
+        console.error("Error fetching all locations:", error);
         throw error;
     }
 }
 
 /**
- * Fetches a single user row from the Bubba_DB Google Sheet by their numeric ID
+ * Fetches a single location row from the Bubba_DB Google Sheet by its numeric ID
  */
-export const fetchUserStatus = async (id: number): Promise<UserRow | null> => {
+export const fetchLocationStatus = async (id: number): Promise<LocationRow | null> => {
     if (!API_URL) throw new Error("API URL is missing in .env.local");
 
     try {
@@ -41,18 +41,18 @@ export const fetchUserStatus = async (id: number): Promise<UserRow | null> => {
 
         const data = await res.json();
         if (data.status === 404 || !data.data) return null;
-        return data.data as UserRow;
+        return data.data as LocationRow;
     } catch (error) {
-        console.error(`Error fetching user ${id}:`, error);
+        console.error(`Error fetching location ${id}:`, error);
         throw error;
     }
 }
 
 /**
- * Toggles a user's status by sending a POST update to the Apps Script endpoint.
+ * Toggles a location's status by sending a POST update to the Apps Script endpoint.
  * Content-Type is set to text/plain to bypass Apps Script's strict CORS preflight requirements.
  */
-export const toggleUserStatus = async (id: number, status: 'Open' | 'Closed'): Promise<boolean> => {
+export const toggleLocationStatus = async (id: number, status: 'Open' | 'Closed'): Promise<boolean> => {
     if (!API_URL) throw new Error("API URL is missing in .env.local");
 
     try {
@@ -69,7 +69,7 @@ export const toggleUserStatus = async (id: number, status: 'Open' | 'Closed'): P
         const data = await res.json();
         return data.success;
     } catch (error) {
-        console.error(`Error toggling status for user ${id}:`, error);
+        console.error(`Error toggling status for location ${id}:`, error);
         throw error;
     }
 }

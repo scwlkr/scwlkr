@@ -30,7 +30,7 @@ jobs:
       env:
         VITE_APPS_SCRIPT_URL: ${{ secrets.VITE_APPS_SCRIPT_URL }}
         BASE_URL: /bubba-dashboard/
-      run: npm run build
+      run: npm run build -- --base=/bubba-dashboard/
       
     - name: 📂 Sync files (Deploy dist folder)
       uses: SamKirkland/FTP-Deploy-Action@v4.3.4

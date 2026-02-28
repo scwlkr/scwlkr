@@ -1,34 +1,35 @@
 import { useState, useCallback, useEffect, useContext } from 'react';
-import { Settings, User, Power, ShieldCheck, AlertTriangle, RefreshCw } from 'lucide-react';
-import { fetchUserStatus, toggleUserStatus } from '../api/sheetApi';
+import { Settings, MapPin, Power, ShieldCheck, AlertTriangle, RefreshCw } from 'lucide-react';
+import { fetchLocationStatus, toggleLocationStatus } from '../api/sheetApi';
 import { AuthContext } from './AuthWrapper';
+import { toast } from 'sonner';
 
-const UserView = () => {
-    const { userId } = useContext(AuthContext);
+const LocationView = () => {
+    const { locationId } = useContext(AuthContext);
 
     // Local state for the toggle
     const [isOpen, setIsOpen] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
-    const [userName, setUserName] = useState('Unknown Agent');
+    const [locationName, setLocationName] = useState('Unknown Location');
     const [error, setError] = useState<string | null>(null);
 
     // Initial Data Fetch
     useEffect(() => {
         const loadData = async () => {
-            if (!userId) {
-                setError('No User ID provided by Auth Gate');
+            if (!locationId) {
+                setError('No Location ID provided by Auth Gate');
                 setIsLoading(false);
                 return;
             }
 
             try {
-                const userData = await fetchUserStatus(userId);
-                if (userData) {
-                    setIsOpen(userData.status === 'Open');
-                    setUserName(userData.username);
+                const data = await fetchLocationStatus(locationId);
+                if (data) {
+                    setIsOpen(data.status === 'Open');
+                    setLocationName(data.username);
                 } else {
-                    setError(`Agent ID #${userId} not found in database.`);
+                    setError(`Location ID #${locationId} not found in database.`);
                 }
             } catch (err) {
                 setError('Connection to Bubba_DB failed.');
@@ -39,10 +40,10 @@ const UserView = () => {
         };
 
         loadData();
-    }, [userId]);
+    }, [locationId]);
 
     const handleToggle = useCallback(async () => {
-        if (!userId) return;
+        if (!locationId) return;
 
         const previousState = isOpen;
         const newState = !isOpen;
@@ -54,20 +55,23 @@ const UserView = () => {
 
         try {
             const targetStatusString = newState ? 'Open' : 'Closed';
-            const success = await toggleUserStatus(userId, targetStatusString);
+            const success = await toggleLocationStatus(locationId, targetStatusString);
 
             if (!success) {
                 throw new Error("API returned failure");
             }
+
+            toast.success(`Location status updated to ${targetStatusString}`);
         } catch (err) {
             // Revert Optimistic UI if it fails
             setIsOpen(previousState);
             setError("Failed to sync status. Reverted to previous state.");
+            toast.error("Failed to sync status");
             console.error(err);
         } finally {
             setIsUpdating(false);
         }
-    }, [isOpen, userId]);
+    }, [isOpen, locationId]);
 
     if (isLoading) {
         return (
@@ -84,13 +88,13 @@ const UserView = () => {
             {/* Header */}
             <header className="flex items-center justify-between mb-8 animate-fade-in">
                 <div className="flex items-center gap-3">
-                    <div className="bg-zinc-900 p-2 rounded-xl border border-zinc-800 shadow-sm relative">
-                        <User className="w-5 h-5 text-zinc-400" />
+                    <div className="bg-zinc-900 p-3 rounded-xl border border-zinc-800 shadow-sm relative">
+                        <MapPin className="w-5 h-5 text-zinc-400" />
                         <div className={`absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-black ${isOpen ? 'bg-brand-green' : 'bg-brand-red'}`} />
                     </div>
                     <div>
-                        <h1 className="text-lg font-semibold tracking-tight">{userName}</h1>
-                        <p className="text-xs text-zinc-500 font-medium">Agent #{userId?.toString().padStart(4, '0')}</p>
+                        <h1 className="text-xl font-bold tracking-tight">{locationName}</h1>
+                        <p className="text-xs text-zinc-500 font-medium">Location #{locationId?.toString().padStart(2, '0')}</p>
                     </div>
                 </div>
                 <button className="text-zinc-500 hover:text-white transition-colors p-2 cursor-pointer">
@@ -106,54 +110,57 @@ const UserView = () => {
                         <h3 className="font-semibold text-sm">Sync Error</h3>
                         <p className="text-xs opacity-90">{error}</p>
                         {error.includes("not found") && (
-                            <p className="text-xs mt-2 underline cursor-pointer" onClick={() => window.location.reload()}>Return to login</p>
+                            <p className="text-xs mt-2 underline cursor-pointer" onClick={() => {
+                                localStorage.removeItem('bubba_location_id');
+                                window.location.reload();
+                            }}>Return to login</p>
                         )}
                     </div>
                 </div>
             )}
 
             {/* Main Content Area */}
-            <main className="flex-1 flex flex-col items-center justify-center -mt-8 relative z-10">
-                <p className="text-sm font-medium uppercase tracking-widest text-zinc-500 mb-6 flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4" /> Current Status
+            <main className="flex-1 flex flex-col items-center justify-center -mt-8 relative z-10 w-full">
+                <p className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-8 flex items-center gap-2">
+                    <ShieldCheck className="w-5 h-5" /> Current Status
                 </p>
 
-                {/* The Tactile Toggle Button */}
+                {/* The Tactile Toggle Button - Made larger for better touch targeting */}
                 <button
                     onClick={handleToggle}
                     disabled={isUpdating || !!error?.includes('not found')}
                     className={`
-            relative group flex flex-col items-center justify-center w-64 h-64 rounded-full transition-all duration-500 ease-out cursor-pointer
+            relative group flex flex-col items-center justify-center w-72 h-72 sm:w-80 sm:h-80 rounded-full transition-all duration-500 ease-out cursor-pointer
             ${isOpen
-                            ? 'bg-brand-green/10 border-brand-green/30 shadow-[0_0_80px_rgba(47,191,113,0.3)] ring-4 ring-brand-green/20'
-                            : 'bg-zinc-900 border-zinc-800 shadow-[0_0_40px_rgba(0,0,0,0.5)] hover:bg-zinc-800'}
-            border-2 overflow-hidden
+                            ? 'bg-brand-green/20 border-brand-green/50 shadow-[0_0_100px_rgba(47,191,113,0.4)] ring-8 ring-brand-green/20'
+                            : 'bg-zinc-900 border-zinc-700 shadow-[0_0_50px_rgba(0,0,0,0.6)] hover:bg-zinc-800'}
+            border-4 overflow-hidden
             ${isUpdating || !!error?.includes('not found') ? 'opacity-70 scale-95 pointer-events-none' : 'hover:scale-105 active:scale-95'}
           `}
                 >
                     {/* Inner Glow Effect for Open state */}
-                    <div className={`absolute inset-0 rounded-full transition-opacity duration-500 ${isOpen ? 'opacity-100' : 'opacity-0'} bg-gradient-to-b from-brand-green/20 to-transparent`} />
+                    <div className={`absolute inset-0 rounded-full transition-opacity duration-500 ${isOpen ? 'opacity-100 animate-pulse' : 'opacity-0'} bg-gradient-to-b from-brand-green/30 to-transparent`} />
 
                     <Power
-                        className={`w-16 h-16 mb-4 transition-all duration-500 z-10 
-              ${isOpen ? 'text-brand-green drop-shadow-[0_0_15px_rgba(47,191,113,0.8)]' : 'text-zinc-500'}
-              ${isUpdating ? 'animate-pulse' : ''}
+                        className={`w-20 h-20 mb-6 transition-all duration-500 z-10 
+              ${isOpen ? 'text-brand-green drop-shadow-[0_0_20px_rgba(47,191,113,1)]' : 'text-zinc-500'}
+              ${isUpdating ? 'animate-ping' : ''}
             `}
                     />
 
-                    <span className={`text-3xl tracking-widest transition-all duration-500 z-10
-            ${isOpen ? 'font-black text-brand-green drop-shadow-md' : 'font-bold text-zinc-600'}
+                    <span className={`text-4xl tracking-widest transition-all duration-500 z-10
+            ${isOpen ? 'font-black text-brand-green drop-shadow-lg' : 'font-bold text-zinc-500'}
           `}>
                         {isOpen ? 'OPEN' : 'CLOSED'}
                     </span>
                 </button>
 
-                <p className={`mt-10 text-center text-sm transition-colors duration-300 ${isOpen ? 'text-brand-green/70' : 'text-zinc-600'}`}>
-                    {isUpdating ? 'Syncing status...' : isOpen ? 'You are currently active and receiving tasks.' : 'You are offline. Press to go active.'}
+                <p className={`mt-12 text-center text-sm font-medium transition-colors duration-300 ${isOpen ? 'text-brand-green/80' : 'text-zinc-500'}`}>
+                    {isUpdating ? 'Syncing status...' : isOpen ? 'Location is currently OPEN.' : 'Location is currently CLOSED.'}
                 </p>
             </main>
         </div>
     );
 };
 
-export default UserView;
+export default LocationView;
