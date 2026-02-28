@@ -3,7 +3,7 @@ name: Deploy to Hostinger
 on:
   push:
     branches:
-      - main # Change this to master if your default branch is master
+      - master
 
 jobs:
   web-deploy:
