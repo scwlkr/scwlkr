@@ -53,6 +53,8 @@ jobs:
         lftp -c "
         set ftp:ssl-allow no;
         open -u $FTP_USERNAME,$FTP_PASSWORD $FTP_SERVER;
+        pwd;
+        ls -la;
         mkdir -p public_html/bubba-dashboard;
         cd public_html/bubba-dashboard;
         mirror -R --delete --verbose dist/ ./;
