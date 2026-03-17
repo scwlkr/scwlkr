@@ -15,6 +15,7 @@ A unique "hovering bricks" link-in-bio page for **scwlkr** (Shane Walker). Featu
 - **The Media Hangar** - Real estate media & production
 - **DFFW Daily** - Dallas-Fort Worth news & local stories
 - **Dink Boys** - Pickleball brand
+- **PaletteWow** - Color palette generator for creatives
 
 ## Dynamic Content
 - **Random X Post** - Displays a random post from @scwlkr with 3-tier fallback system (Vercel API → oEmbed API → placeholder)

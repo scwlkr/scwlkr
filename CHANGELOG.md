@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-03-16
+
+### Added
+- **PaletteWow** - Added new business card for the color palette generator.
+
+### Cleaned
+- **Vercel Config** - Removed outdated `bubba-dashboard` rewrite rules from `vercel.json`.
+
 ## [2.1.0] - 2026-01-02
 
 ### Added - Random X Post Feature
