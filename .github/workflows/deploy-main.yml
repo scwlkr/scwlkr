@@ -1,0 +1,35 @@
+name: Deploy Main Site to Hostinger
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  web-deploy:
+    name: 🎉 Deploy
+    runs-on: ubuntu-latest
+    steps:
+    - name: 🚚 Get latest code
+      uses: actions/checkout@v4
+      
+    - name: 💿 Install lftp
+      run: sudo apt-get update && sudo apt-get install -y lftp
+      
+    - name: 📂 Deploy via lftp
+      env:
+        FTP_SERVER: ${{ secrets.FTP_SERVER }}
+        FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+        FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+      run: |
+        lftp -c "
+        set ftp:ssl-allow no;
+        open -u $FTP_USERNAME,$FTP_PASSWORD $FTP_SERVER;
+        # Sync the root directory to public_html
+        # -R: Reverse mirror (local to remote)
+        # --delete: Delete remote files that don't exist locally
+        # --verbose: Show progress
+        # --exclude: Avoid syncing git and other hidden metadata
+        mirror -R --delete --verbose --exclude .git/ --exclude .github/ --exclude .vercel/ --exclude .claude/ --exclude .cursor/ ./ public_html/;
+        bye
+        "
