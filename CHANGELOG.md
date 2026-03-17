@@ -12,7 +12,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **PaletteWow** - Added new business card for the color palette generator.
 
 ### Cleaned
-- **Vercel Config** - Removed outdated `bubba-dashboard` rewrite rules from `vercel.json`.
+- **Vercel Config** - Removed outdated project rewrite rules from `vercel.json`.
+- **Deployment** - Removed legacy GitHub Actions workflow.
 
 ## [2.1.0] - 2026-01-02
 
