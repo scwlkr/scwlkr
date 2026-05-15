@@ -109,8 +109,7 @@ going a mile an hour
 ## 📡 telemetry
 
 <div align="center">
-  <img height="170" src="https://github-readme-stats.vercel.app/api?username=scwlkr&show_icons=true&hide_border=true&theme=merko&rank_icon=github&include_all_commits=true" alt="scwlkr GitHub stats">
-  <img height="170" src="https://github-readme-stats.vercel.app/api/top-langs/?username=scwlkr&layout=compact&hide_border=true&theme=merko" alt="scwlkr top languages">
+  <img src="./assets/telemetry.svg" width="100%" alt="scwlkr telemetry dashboard">
 </div>
 
 ---
