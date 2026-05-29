@@ -1,140 +1,61 @@
-<!--
-  scwlkr GitHub profile README
-  Drop this file into: https://github.com/scwlkr/scwlkr/blob/main/README.md
-  Drop ./assets/hero.svg into the same repo.
--->
+# Hi, I'm scwlkr
 
-<div align="center">
-  <img src="./assets/hero.svg" width="100%" alt="scwlkr — going a mile an hour">
-  <br><br>
-  <a href="https://scwlkr.com">
-    <img src="https://img.shields.io/badge/home-scwlkr.com-00ff9c?style=for-the-badge&labelColor=0b0f14" alt="scwlkr.com">
-  </a>
-  <a href="https://github.com/scwlkr?tab=repositories">
-    <img src="https://img.shields.io/badge/repos-public_lab-7c3cff?style=for-the-badge&labelColor=0b0f14" alt="public repositories">
-  </a>
-  <a href="https://context.scwlkr.com/llms.txt">
-    <img src="https://img.shields.io/badge/context-agent_ready-ffcc00?style=for-the-badge&labelColor=0b0f14" alt="public context">
-  </a>
-</div>
+Dallas, Texas | building useful internet projects, local media, and small tools.
 
-<h1 align="center">internet things, built at irresponsible velocity</h1>
+I build and operate small web projects across local media, real estate media,
+consumer brands, developer utilities, and whatever recurring workflow needs to
+become software.
 
-<p align="center">
-  <b>not a vibe coder</b> · Dallas, TX · wife/dog/MacBook · <code>n00b until proven guilty</code>
-</p>
+![TypeScript](https://img.shields.io/badge/-TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
+![Python](https://img.shields.io/badge/-Python-3776AB?style=flat-square&logo=python&logoColor=white)
+![Swift](https://img.shields.io/badge/-Swift-FA7343?style=flat-square&logo=swift&logoColor=white)
+![Zig](https://img.shields.io/badge/-Zig-F7A41D?style=flat-square&logo=zig&logoColor=black)
+![JavaScript](https://img.shields.io/badge/-JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black)
+![HTML](https://img.shields.io/badge/-HTML-E34F26?style=flat-square&logo=html5&logoColor=white)
+![macOS](https://img.shields.io/badge/-macOS-000000?style=flat-square&logo=apple&logoColor=white)
+![GitHub](https://img.shields.io/badge/-GitHub-181717?style=flat-square&logo=github&logoColor=white)
 
-```console
-$ whoami
-scwlkr — builder of useful/weird internet machines
+## Start Here
 
-$ mission
-ship tiny companies, local internet, tools with ominous names, and whatever refuses to leave my head
+- **[The Media Hangar](https://themediahangar.com)** - Real estate media in DFW.
+- **[DFFW Daily](https://www.dffwdaily.com)** - Local news for Dallas-Fort Worth.
+- **[Dink Boys](https://dinkboys.com)** - Pickleball brand.
+- **[PaletteWOW](https://palettewow.xyz)** - A fast, visual color palette generator.
 
-$ current_status
-going a mile an hour
-```
+## Current Work
 
----
+- **Local internet** - useful sites, services, and publications for Dallas-Fort Worth.
+- **Small-business tooling** - workflows for media, publishing, and operations.
+- **Public experiments** - open-source projects that prove an idea quickly.
+- **Agent-assisted development** - using coding agents to ship more work with less ceremony.
 
-## 🛰️ mission control
+## Projects
 
-<table>
-  <tr>
-    <td width="50%">
-      <h3>🛫 <a href="https://themediahangar.com">The Media Hangar</a></h3>
-      <p>Real estate media in DFW.</p>
-      <p><code>real estate</code> <code>media</code> <code>DFW</code></p>
-    </td>
-    <td width="50%">
-      <h3>🥒 <a href="https://dinkboys.com">Dink Boys</a></h3>
-      <p>Pickleball brand.</p>
-      <p><code>brand</code> <code>pickleball</code> <code>sport</code></p>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%">
-      <h3>🗞️ <a href="https://www.dffwdaily.com">DFFW Daily</a></h3>
-      <p>Local news for Dallas–Fort Worth.</p>
-      <p><code>local news</code> <code>DFW</code> <code>TypeScript</code></p>
-    </td>
-    <td width="50%">
-      <h3>🎨 <a href="https://palettewow.xyz">PaletteWOW</a></h3>
-      <p>A color palette generator. Open source, visual, immediately useful.</p>
-      <p><code>colors</code> <code>HTML</code> <code>open source</code></p>
-    </td>
-  </tr>
-</table>
+### Products and Publications
 
----
+- **[dffwdaily](https://github.com/scwlkr/dffwdaily)** - Local DFW news orbit.
+- **[HH-Website](https://github.com/scwlkr/HH-Website)** - Public website build.
+- **[QuickBrakeRepair](https://github.com/scwlkr/QuickBrakeRepair)** - Service business website.
+- **[bubbashq](https://github.com/scwlkr/bubbashq)** - TypeScript project in the public lab.
 
-## ⚔️ public lab / project armory
+### Tools and Utilities
 
-| Project | Stack | Signal |
-|---|---:|---|
-| [scwlkr-context](https://github.com/scwlkr/scwlkr-context) | Python | Public context harness for agents and collaborators. |
-| [paletteWOW](https://github.com/scwlkr/paletteWOW) | HTML | Color palette generator; open source for all. |
-| [Walk-The-World](https://github.com/scwlkr/Walk-The-World) | TypeScript | Walk around the world or something. |
-| [dffwdaily](https://github.com/scwlkr/dffwdaily) | TypeScript | Local DFW news orbit. |
-| [HH-Website](https://github.com/scwlkr/HH-Website) | TypeScript | Site build in the public lab. |
-| [QuickBrakeRepair](https://github.com/scwlkr/QuickBrakeRepair) | HTML | HTML site in the public lab. |
-| [HealthyServerMac](https://github.com/scwlkr/HealthyServerMac) | Swift | Swift utility; watch the skies. |
-| [OpenAlfredo](https://github.com/scwlkr/OpenAlfredo) | TypeScript | Better to serve, than be served. |
-| [DeathOfPrompt](https://github.com/scwlkr/DeathOfPrompt) | TypeScript | The end of prompting. |
-| [contubernium](https://github.com/scwlkr/contubernium) | Zig | Sometimes you need an army. |
-| [scwlkr](https://github.com/scwlkr/scwlkr) | Markdown | This profile’s command center. |
-| [bubbashq](https://github.com/scwlkr/bubbashq) | TypeScript | TypeScript thing in the hangar. |
-| [ctb-translator](https://github.com/scwlkr/ctb-translator) | Python | Converts Civil3D CTB plot styles to an Excel-printable version. |
-| [scwlkr.github.io](https://github.com/scwlkr/scwlkr.github.io) | Web | GitHub Pages orbit. |
-| [pickled-paddles](https://github.com/scwlkr/pickled-paddles) | JavaScript | JavaScript thing in the public lab. |
-| [shanecwalker](https://github.com/scwlkr/shanecwalker) | Config | Legacy GitHub profile config files. |
+- **[paletteWOW](https://github.com/scwlkr/paletteWOW)** - Color palette generator; open source and immediately useful.
+- **[ctb-translator](https://github.com/scwlkr/ctb-translator)** - Converts Civil3D CTB plot styles into an Excel-printable format.
+- **[HealthyServerMac](https://github.com/scwlkr/HealthyServerMac)** - Swift utility for keeping an eye on a Mac server.
+- **[OpenAlfredo](https://github.com/scwlkr/OpenAlfredo)** - TypeScript service-tool experiment.
 
----
+### Explorations
 
-## 🧰 stack in the toolbox
+- **[Walk-The-World](https://github.com/scwlkr/Walk-The-World)** - TypeScript experiment around movement and place.
+- **[DeathOfPrompt](https://github.com/scwlkr/DeathOfPrompt)** - Experiment in promptless or agent-shaped interfaces.
+- **[contubernium](https://github.com/scwlkr/contubernium)** - Zig project for coordinated worker-style systems.
+- **[pickled-paddles](https://github.com/scwlkr/pickled-paddles)** - JavaScript project from the public lab.
 
-<div align="center">
-  <img src="https://img.shields.io/badge/TypeScript-0b0f14?style=for-the-badge&logo=typescript&logoColor=3178C6" alt="TypeScript">
-  <img src="https://img.shields.io/badge/Python-0b0f14?style=for-the-badge&logo=python&logoColor=FFD43B" alt="Python">
-  <img src="https://img.shields.io/badge/Zig-0b0f14?style=for-the-badge&logo=zig&logoColor=F7A41D" alt="Zig">
-  <img src="https://img.shields.io/badge/Swift-0b0f14?style=for-the-badge&logo=swift&logoColor=FA7343" alt="Swift">
-  <img src="https://img.shields.io/badge/JavaScript-0b0f14?style=for-the-badge&logo=javascript&logoColor=F7DF1E" alt="JavaScript">
-  <img src="https://img.shields.io/badge/HTML-0b0f14?style=for-the-badge&logo=html5&logoColor=E34F26" alt="HTML">
-  <img src="https://img.shields.io/badge/macOS-0b0f14?style=for-the-badge&logo=apple&logoColor=white" alt="macOS">
-  <img src="https://img.shields.io/badge/GitHub-0b0f14?style=for-the-badge&logo=github&logoColor=white" alt="GitHub">
-</div>
+## GitHub Activity
 
----
+![GitHub Contribution Graph](https://ghchart.rshah.org/scwlkr)
 
-## 📡 telemetry
+## Connect
 
-<div align="center">
-  <img src="./assets/telemetry.svg" width="100%" alt="scwlkr telemetry dashboard">
-</div>
-
----
-
-<details open>
-  <summary><b>🧪 black box flight recorder</b></summary>
-
-```txt
-INPUT   : ideas that should not exist yet
-OUTPUT  : tiny companies, local internet, color machines, server helpers, ominous tools
-RULE    : boring profiles are a bug
-STATUS  : shipping
-```
-
-</details>
-
----
-
-<div align="center">
-  <h3>find me where the weird stuff gets shipped</h3>
-  <p>
-    <a href="https://scwlkr.com">website</a>
-    ·
-    <a href="https://github.com/scwlkr?tab=repositories">repos</a>
-    ·
-    <a href="https://context.scwlkr.com/llms.txt">public context</a>
-  </p>
-</div>
+[Website](https://scwlkr.com) | [GitHub](https://github.com/scwlkr?tab=repositories)
