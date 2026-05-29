@@ -1,10 +1,8 @@
 # Hi, I'm scwlkr
 
-Dallas, Texas | building useful internet projects, local media, and small tools.
+Dallas, Texas | learning, building tools, and make fun projects
 
-I build and operate small web projects across local media, real estate media,
-consumer brands, developer utilities, and whatever recurring workflow needs to
-become software.
+I build and operate small web projects across developer utilities, and whatever recurring workflow needs to become software.
 
 ![TypeScript](https://img.shields.io/badge/-TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
 ![Python](https://img.shields.io/badge/-Python-3776AB?style=flat-square&logo=python&logoColor=white)
@@ -17,10 +15,11 @@ become software.
 
 ## Start Here
 
-- **[The Media Hangar](https://themediahangar.com)** - Real estate media in DFW.
+- **[WalkLang](https://github.com/scwlkr/walklang)** - My prefered language.
+- **[Vampyre](https://github.com/scwlkr/vampyre)** - Automated project continuos progression.
+- **[PaletteWOW](https://palettewow.xyz)** - A fast, visual color palette generator.
 - **[DFFW Daily](https://www.dffwdaily.com)** - Local news for Dallas-Fort Worth.
 - **[Dink Boys](https://dinkboys.com)** - Pickleball brand.
-- **[PaletteWOW](https://palettewow.xyz)** - A fast, visual color palette generator.
 
 ## Current Work
 
@@ -31,26 +30,20 @@ become software.
 
 ## Projects
 
-### Products and Publications
+### Publications
 
 - **[dffwdaily](https://github.com/scwlkr/dffwdaily)** - Local DFW news orbit.
-- **[HH-Website](https://github.com/scwlkr/HH-Website)** - Public website build.
-- **[QuickBrakeRepair](https://github.com/scwlkr/QuickBrakeRepair)** - Service business website.
-- **[bubbashq](https://github.com/scwlkr/bubbashq)** - TypeScript project in the public lab.
 
 ### Tools and Utilities
 
 - **[paletteWOW](https://github.com/scwlkr/paletteWOW)** - Color palette generator; open source and immediately useful.
 - **[ctb-translator](https://github.com/scwlkr/ctb-translator)** - Converts Civil3D CTB plot styles into an Excel-printable format.
-- **[HealthyServerMac](https://github.com/scwlkr/HealthyServerMac)** - Swift utility for keeping an eye on a Mac server.
+- **[Buoy](https://github.com/WLKRLABS/Buoy)** - Swift utility for keeping an eye on a Mac server.
 - **[OpenAlfredo](https://github.com/scwlkr/OpenAlfredo)** - TypeScript service-tool experiment.
 
 ### Explorations
 
 - **[Walk-The-World](https://github.com/scwlkr/Walk-The-World)** - TypeScript experiment around movement and place.
-- **[DeathOfPrompt](https://github.com/scwlkr/DeathOfPrompt)** - Experiment in promptless or agent-shaped interfaces.
-- **[contubernium](https://github.com/scwlkr/contubernium)** - Zig project for coordinated worker-style systems.
-- **[pickled-paddles](https://github.com/scwlkr/pickled-paddles)** - JavaScript project from the public lab.
 
 ## GitHub Activity
 
