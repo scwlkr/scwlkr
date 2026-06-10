@@ -44,6 +44,7 @@ I build and operate small web projects across developer utilities, and whatever 
 ### Explorations
 
 - **[Walk-The-World](https://github.com/scwlkr/Walk-The-World)** - TypeScript experiment around movement and place.
+- - **[PicoNet](https://github.com/scwlkr/Piconet)** - An LLM.
 
 ## GitHub Activity
 
