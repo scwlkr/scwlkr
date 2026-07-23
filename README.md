@@ -26,7 +26,7 @@ One clear shared Task List for small working Groups. Production **web app + auth
 
 <table>
   <tr>
-    <td width="33%" valign="top">
+    <td width="50%" valign="top">
       <strong>01 / BUILT A LANGUAGE</strong><br><br>
       <a href="https://github.com/scwlkr/WalkLang"><strong>WalkLang</strong></a>
       compiles indentation-based source through generated C into native
@@ -34,28 +34,30 @@ One clear shared Task List for small working Groups. Production **web app + auth
       <a href="https://github.com/scwlkr/PicoNet"><strong>PicoNet</strong></a>,
       a tiny terminal chatbot, entirely in it.
     </td>
-    <td width="33%" valign="top">
+    <td width="50%" valign="top">
       <strong>02 / TAMED A MAC</strong><br><br>
       <a href="https://github.com/WLKRLABS/buoy"><strong>Buoy</strong></a>
       is a Swift CLI + AppKit dashboard that keeps a Mac awake without lying
       about the machine's real power state.
     </td>
-    <td width="33%" valign="top">
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
       <strong>03 / MADE VIDEO LESS ANNOYING</strong><br><br>
       <a href="https://github.com/scwlkr/tellygrab"><strong>tellygrab</strong></a>
       turns a YouTube URL into editor-ready ProRes or WAV—and reveals a tiny
       ASCII television while it works.
     </td>
-  </tr>
-  <tr>
-    <td width="33%" valign="top">
+    <td width="50%" valign="top">
       <strong>04 / WORLDS IN PROGRESS</strong><br><br>
       <a href="https://github.com/scwlkr/UQIQ"><strong>UQIQ</strong></a>
       is a fake-IQ mobile game that judges you for fun.
       <a href="https://github.com/scwlkr/keep-driving"><strong>Keep Driving</strong></a>
       is a working-title survival-driving roguelite prototype.
     </td>
-    <td width="33%" valign="top">
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
       <strong>05 / AGENT MENAGERIE</strong><br><br>
       Factories, commanders, and persistent little creatures:
       <a href="https://github.com/scwlkr/Vampyre">Vampyre</a>,
@@ -63,7 +65,7 @@ One clear shared Task List for small working Groups. Production **web app + auth
       <a href="https://github.com/scwlkr/contubernium">Contubernium</a>, and
       <a href="https://github.com/scwlkr/OpenAlfredo">OpenAlfredo</a>.
     </td>
-    <td width="33%" valign="top">
+    <td width="50%" valign="top">
       <strong>06 / SOFTWARE IN THE WILD</strong><br><br>
       The lab spills into real operations:
       <a href="https://github.com/scwlkr/HH-Website">HH</a>,
