@@ -1,0 +1,91 @@
+<svg width="1280" height="520" viewBox="0 0 1280 520" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Connected machines built by scwlkr</title>
+  <desc id="desc">A green cable connects work tools OpenJob, Buoy, and tellygrab; system experiments Vampyre, WalkLang, and PicoNet; and game worlds Keep Driving and UQIQ.</desc>
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" stroke="#FFFFFF" stroke-opacity=".035"/>
+    </pattern>
+    <filter id="glow" x="-20%" y="-40%" width="140%" height="180%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1280" height="520" rx="22" fill="#181818"/>
+  <rect x="16" y="16" width="1248" height="488" rx="18" fill="url(#grid)" stroke="#FFFFFF" stroke-opacity=".16" stroke-width="1.5"/>
+
+  <text x="52" y="61" fill="#FFFFFF" font-family="Arial Black, Arial, sans-serif" font-size="28" font-weight="900" letter-spacing="-.5">THE MACHINES ARE CONNECTED.</text>
+  <text x="52" y="91" fill="#8B8B8B" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="15">same operator // different forms of friction // public proof only</text>
+  <text x="1092" y="61" fill="#23CE6B" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14" font-weight="800">FLEET / 08</text>
+
+  <path d="M0 158H1088C1142 158 1176 182 1176 222V244C1176 274 1142 292 1088 292H186C132 292 104 318 104 350V374C104 402 142 422 194 422H1280" stroke="#23CE6B" stroke-width="5" filter="url(#glow)"/>
+  <path d="M0 158H1088C1142 158 1176 182 1176 222V244C1176 274 1142 292 1088 292H186C132 292 104 318 104 350V374C104 402 142 422 194 422H1280" stroke="#B6FFD2" stroke-opacity=".8"/>
+
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+    <text x="52" y="140" fill="#23CE6B" font-size="12" font-weight="800" letter-spacing="2">TOOLS / WORK</text>
+    <text x="52" y="274" fill="#23CE6B" font-size="12" font-weight="800" letter-spacing="2">SYSTEMS / AGENTS</text>
+    <text x="52" y="404" fill="#23CE6B" font-size="12" font-weight="800" letter-spacing="2">WORLDS / PLAY</text>
+  </g>
+
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+    <g transform="translate(196 158)">
+      <circle r="14" fill="#181818" stroke="#23CE6B" stroke-width="4"/>
+      <circle r="5" fill="#23CE6B"/>
+      <text x="-48" y="-32" fill="#FFFFFF" font-size="18" font-weight="900">OPENJOB</text>
+      <text x="-63" y="39" fill="#8B8B8B" font-size="13">teams shipping</text>
+    </g>
+    <g transform="translate(540 158)">
+      <circle r="14" fill="#181818" stroke="#23CE6B" stroke-width="4"/>
+      <circle r="5" fill="#23CE6B"/>
+      <text x="-23" y="-32" fill="#FFFFFF" font-size="18" font-weight="900">BUOY</text>
+      <text x="-50" y="39" fill="#8B8B8B" font-size="13">Macs awake</text>
+    </g>
+    <g transform="translate(876 158)">
+      <circle r="14" fill="#181818" stroke="#23CE6B" stroke-width="4"/>
+      <circle r="5" fill="#23CE6B"/>
+      <text x="-50" y="-32" fill="#FFFFFF" font-size="18" font-weight="900">TELLYGRAB</text>
+      <text x="-80" y="39" fill="#8B8B8B" font-size="13">edit-ready media</text>
+    </g>
+
+    <g transform="translate(930 292)">
+      <circle r="14" fill="#181818" stroke="#23CE6B" stroke-width="4"/>
+      <circle r="5" fill="#23CE6B"/>
+      <text x="-36" y="-32" fill="#FFFFFF" font-size="18" font-weight="900">PICONET</text>
+      <text x="-71" y="39" fill="#8B8B8B" font-size="13">tiny language talking</text>
+    </g>
+    <g transform="translate(604 292)">
+      <circle r="14" fill="#181818" stroke="#23CE6B" stroke-width="4"/>
+      <circle r="5" fill="#23CE6B"/>
+      <text x="-44" y="-32" fill="#FFFFFF" font-size="18" font-weight="900">WALKLANG</text>
+      <text x="-72" y="39" fill="#8B8B8B" font-size="13">source → native binary</text>
+    </g>
+    <g transform="translate(284 292)">
+      <circle r="14" fill="#181818" stroke="#23CE6B" stroke-width="4"/>
+      <circle r="5" fill="#23CE6B"/>
+      <text x="-42" y="-32" fill="#FFFFFF" font-size="18" font-weight="900">VAMPYRE</text>
+      <text x="-65" y="39" fill="#8B8B8B" font-size="13">projects alive</text>
+    </g>
+
+    <g transform="translate(412 422)">
+      <circle r="14" fill="#181818" stroke="#23CE6B" stroke-width="4"/>
+      <circle r="5" fill="#23CE6B"/>
+      <text x="-63" y="-32" fill="#FFFFFF" font-size="18" font-weight="900">KEEP DRIVING</text>
+      <text x="-67" y="39" fill="#8B8B8B" font-size="13">cars rolling / WIP</text>
+    </g>
+    <g transform="translate(820 422)">
+      <circle r="14" fill="#181818" stroke="#23CE6B" stroke-width="4"/>
+      <circle r="5" fill="#23CE6B"/>
+      <text x="-20" y="-32" fill="#FFFFFF" font-size="18" font-weight="900">UQIQ</text>
+      <text x="-63" y="39" fill="#8B8B8B" font-size="13">judges you for fun</text>
+    </g>
+  </g>
+
+  <g fill="#777777" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12">
+    <text x="1060" y="200">INPUT: FRICTION</text>
+    <text x="1060" y="335">OUTPUT: MACHINES</text>
+    <text x="52" y="482">OPERATING PRINCIPLE: BUILD THE TOOL → USE THE TOOL → FIND THE NEXT WEIRD EDGE</text>
+  </g>
+</svg>
