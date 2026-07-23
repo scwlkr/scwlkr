@@ -1,55 +1,107 @@
-# Hi, I'm scwlkr
+<p align="center">
+  <img src="./assets/hero-night-shift.svg" alt="SCWLKR Night Shift Control Room — one operator building many connected tools, worlds, and infrastructure projects in Dallas" width="100%">
+</p>
 
-Dallas, Texas | learning, building tools, and make fun projects
+<p align="center">
+  <samp>DALLAS // N00B UNTIL PRODUCTION SAYS OTHERWISE // PROOF &gt; VIBES</samp>
+</p>
 
-I build and operate small web projects across developer utilities, and whatever recurring workflow needs to become software.
+I build systems that keep things moving—**Macs awake, projects alive, cars rolling, teams shipping, and tiny languages talking.**
 
-![TypeScript](https://img.shields.io/badge/-TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
-![Python](https://img.shields.io/badge/-Python-3776AB?style=flat-square&logo=python&logoColor=white)
-![Swift](https://img.shields.io/badge/-Swift-FA7343?style=flat-square&logo=swift&logoColor=white)
-![Zig](https://img.shields.io/badge/-Zig-F7A41D?style=flat-square&logo=zig&logoColor=black)
-![JavaScript](https://img.shields.io/badge/-JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black)
-![HTML](https://img.shields.io/badge/-HTML-E34F26?style=flat-square&logo=html5&logoColor=white)
-![macOS](https://img.shields.io/badge/-macOS-000000?style=flat-square&logo=apple&logoColor=white)
-![GitHub](https://img.shields.io/badge/-GitHub-181717?style=flat-square&logo=github&logoColor=white)
+The pattern is usually the same: find recurring friction, learn whatever the machine demands, ship the smallest real version, then keep pulling the thread.
 
-## Start Here
+## CURRENT HEIST
 
-- **[WalkLang](https://github.com/scwlkr/walklang)** - My prefered language.
-- **[Vampyre](https://github.com/scwlkr/vampyre)** - Automated project continuos progression.
-- **[PaletteWOW](https://palettewow.xyz)** - A fast, visual color palette generator.
-- **[DFFW Daily](https://www.dffwdaily.com)** - Local news for Dallas-Fort Worth.
-- **[Dink Boys](https://dinkboys.com)** - Pickleball brand.
+### [OPENJOB →](https://openjob.dev)
 
-## Current Work
+One clear shared Task List for small working Groups. Production **web app + authenticated API + installable CLI + PWA**, built as one system instead of four demos. The current mutation: native iOS and Android clients.
 
-- **Local internet** - useful sites, services, and publications for Dallas-Fort Worth.
-- **Small-business tooling** - workflows for media, publishing, and operations.
-- **Public experiments** - open-source projects that prove an idea quickly.
-- **Agent-assisted development** - using coding agents to ship more work with less ceremony.
+[`SOURCE`](https://github.com/scwlkr/openjob) · [`RELEASES`](https://github.com/scwlkr/openjob/releases) · [`MOBILE ROADMAP`](https://github.com/scwlkr/openjob/issues/33)
 
-## Projects
+## THE MACHINES ARE CONNECTED
 
-### Publications
+<p align="center">
+  <img src="./assets/connected-machines.svg" alt="A cable map connecting OpenJob, Buoy, tellygrab, Vampyre, WalkLang, PicoNet, Keep Driving, and UQIQ" width="100%">
+</p>
 
-- **[dffwdaily](https://github.com/scwlkr/dffwdaily)** - Local DFW news orbit.
+<table>
+  <tr>
+    <td width="33%" valign="top">
+      <strong>01 / BUILT A LANGUAGE</strong><br><br>
+      <a href="https://github.com/scwlkr/WalkLang"><strong>WalkLang</strong></a>
+      compiles indentation-based source through generated C into native
+      executables. Then I wrote
+      <a href="https://github.com/scwlkr/PicoNet"><strong>PicoNet</strong></a>,
+      a tiny terminal chatbot, entirely in it.
+    </td>
+    <td width="33%" valign="top">
+      <strong>02 / TAMED A MAC</strong><br><br>
+      <a href="https://github.com/WLKRLABS/buoy"><strong>Buoy</strong></a>
+      is a Swift CLI + AppKit dashboard that keeps a Mac awake without lying
+      about the machine's real power state.
+    </td>
+    <td width="33%" valign="top">
+      <strong>03 / MADE VIDEO LESS ANNOYING</strong><br><br>
+      <a href="https://github.com/scwlkr/tellygrab"><strong>tellygrab</strong></a>
+      turns a YouTube URL into editor-ready ProRes or WAV—and reveals a tiny
+      ASCII television while it works.
+    </td>
+  </tr>
+  <tr>
+    <td width="33%" valign="top">
+      <strong>04 / WORLDS IN PROGRESS</strong><br><br>
+      <a href="https://github.com/scwlkr/UQIQ"><strong>UQIQ</strong></a>
+      is a fake-IQ mobile game that judges you for fun.
+      <a href="https://github.com/scwlkr/keep-driving"><strong>Keep Driving</strong></a>
+      is a working-title survival-driving roguelite prototype.
+    </td>
+    <td width="33%" valign="top">
+      <strong>05 / AGENT MENAGERIE</strong><br><br>
+      Factories, commanders, and persistent little creatures:
+      <a href="https://github.com/scwlkr/Vampyre">Vampyre</a>,
+      <a href="https://github.com/scwlkr/maker">Maker</a>,
+      <a href="https://github.com/scwlkr/contubernium">Contubernium</a>, and
+      <a href="https://github.com/scwlkr/OpenAlfredo">OpenAlfredo</a>.
+    </td>
+    <td width="33%" valign="top">
+      <strong>06 / SOFTWARE IN THE WILD</strong><br><br>
+      The lab spills into real operations:
+      <a href="https://github.com/scwlkr/HH-Website">HH</a>,
+      <a href="https://www.dffwdaily.com">DFFW Daily</a>,
+      <a href="https://github.com/scwlkr/QuickBrakeRepair">Quick Brake Repair</a>,
+      and small tools that remove one ridiculous step.
+    </td>
+  </tr>
+</table>
 
-### Tools and Utilities
+## LIVE FEED
 
-- **[paletteWOW](https://github.com/scwlkr/paletteWOW)** - Color palette generator; open source and immediately useful.
-- **[ctb-translator](https://github.com/scwlkr/ctb-translator)** - Converts Civil3D CTB plot styles into an Excel-printable format.
-- **[Buoy](https://github.com/WLKRLABS/Buoy)** - Swift utility for keeping an eye on a Mac server.
-- **[OpenAlfredo](https://github.com/scwlkr/OpenAlfredo)** - TypeScript service-tool experiment.
+<p align="center">
+  <img src="./assets/black-box.svg" alt="A self-updating panel of scwlkr's public GitHub repository count, yearly activity, latest release, and recent pushes" width="100%">
+</p>
 
-### Explorations
+<sub>
+Regenerated by this repo's own <a href="./.github/workflows/update-black-box.yml">GitHub Action</a> from public GitHub data. No rented stat-card server. The <a href="./scripts/build-black-box.mjs">recorder is inspectable</a>.
+</sub>
 
-- **[Walk-The-World](https://github.com/scwlkr/Walk-The-World)** - TypeScript experiment around movement and place.
-- - **[PicoNet](https://github.com/scwlkr/Piconet)** - An LLM.
+<details>
+  <summary><strong>OPEN THE OPERATOR DOSSIER</strong></summary>
+  <br>
 
-## GitHub Activity
+  - **Base:** Dallas, Texas.
+  - **Languages:** TypeScript/JavaScript, Swift, Python, C++/C, GDScript, shell, and the occasional self-inflicted language.
+  - **Machinery:** macOS, Godot, Cloudflare, Firebase, GitHub Actions, Codex, terminals, physical-device tests, and whatever closes the loop.
+  - **Operating rule:** if the workflow repeats, it is auditioning to become software.
+  - **Side quests:** [PaletteWOW](https://github.com/scwlkr/paletteWOW), [skillsies](https://github.com/scwlkr/skillsies), [ctb-translator](https://github.com/scwlkr/ctb-translator), and [Walk The World](https://github.com/scwlkr/Walk-The-World).
 
-![GitHub Contribution Graph](https://ghchart.rshah.org/scwlkr)
+</details>
 
-## Connect
+<br>
 
-[Website](https://scwlkr.com) | [GitHub](https://github.com/scwlkr?tab=repositories)
+<p align="center">
+  <a href="https://scwlkr.com"><strong>SCWLKR.COM</strong></a>
+  &nbsp;·&nbsp;
+  <a href="https://github.com/scwlkr?tab=repositories"><strong>ALL MACHINES</strong></a>
+  &nbsp;·&nbsp;
+  <a href="https://github.com/scwlkr/openjob"><strong>CURRENT OBSESSION</strong></a>
+</p>
