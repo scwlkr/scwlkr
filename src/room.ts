@@ -320,10 +320,13 @@ export class Room extends DurableObject<Env> {
   }
 
   async alarm(): Promise<void> {
-    await this.archiveOldArtifacts();
-    const mutationCutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
-    this.state.storage.sql.exec("DELETE FROM mutations WHERE created_at < ?", mutationCutoff);
-    await this.state.storage.setAlarm(Date.now() + 24 * 60 * 60 * 1000);
+    try {
+      await this.archiveOldArtifacts();
+      const mutationCutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+      this.state.storage.sql.exec("DELETE FROM mutations WHERE created_at < ?", mutationCutoff);
+    } finally {
+      await this.state.storage.setAlarm(Date.now() + 24 * 60 * 60 * 1000);
+    }
   }
 
   private async applyMutation(
@@ -660,7 +663,15 @@ export class Room extends DurableObject<Env> {
     const now = Date.now();
     const artifacts = this.state.storage.sql
       .exec(
-        "SELECT id, kind, creator_token, created_at, updated_at, revision, lifecycle, payload FROM artifacts WHERE lifecycle = 'active' ORDER BY created_at ASC LIMIT ?",
+        `SELECT id, kind, creator_token, created_at, updated_at, revision, lifecycle, payload
+         FROM (
+           SELECT id, kind, creator_token, created_at, updated_at, revision, lifecycle, payload
+           FROM artifacts
+           WHERE lifecycle = 'active'
+           ORDER BY created_at DESC
+           LIMIT ?
+         )
+         ORDER BY created_at ASC`,
         MAX_ACTIVE_ARTIFACTS,
       )
       .toArray()
@@ -702,6 +713,7 @@ export class Room extends DurableObject<Env> {
       occupancy: this.occupancy(),
       activeArtifacts: activeArtifacts.count,
       reports: reports.count,
+      archiveConfigured: Boolean(this.environment.ARCHIVE),
       checkedAt: new Date().toISOString(),
     });
   }
@@ -797,23 +809,42 @@ export class Room extends DurableObject<Env> {
   }
 
   private async archiveOldArtifacts(): Promise<void> {
+    const archive = this.environment.ARCHIVE;
+    if (!archive) return;
+
     const cutoff = Date.now() - ARCHIVE_AFTER_MS;
     const total = this.state.storage.sql
       .exec("SELECT COUNT(*) AS count FROM artifacts WHERE lifecycle = 'active'")
       .toArray()[0] as { count: number };
     const overflow = Math.max(0, total.count - MAX_ACTIVE_ARTIFACTS);
+    const archiveLimit = Math.min(1000, Math.max(100, overflow));
     const rows = this.state.storage.sql
       .exec(
-        "SELECT id, kind, creator_token, created_at, updated_at, revision, lifecycle, payload FROM artifacts WHERE lifecycle = 'active' AND created_at < ? ORDER BY created_at ASC LIMIT ?",
+        `SELECT id, kind, creator_token, created_at, updated_at, revision, lifecycle, payload
+         FROM artifacts
+         WHERE lifecycle = 'active'
+           AND (
+             created_at < ?
+             OR id IN (
+               SELECT id
+               FROM artifacts
+               WHERE lifecycle = 'active'
+               ORDER BY created_at ASC
+               LIMIT ?
+             )
+           )
+         ORDER BY created_at ASC
+         LIMIT ?`,
         cutoff,
-        Math.max(100, overflow),
+        overflow,
+        archiveLimit,
       )
       .toArray() as unknown as ArtifactRow[];
     if (rows.length === 0) return;
 
     const archiveId = crypto.randomUUID();
     const key = `room-1/${new Date().toISOString().slice(0, 10)}/${archiveId}.json`;
-    await this.environment.ARCHIVE.put(
+    await archive.put(
       key,
       JSON.stringify({ room: ROOM_NAME, archivedAt: Date.now(), artifacts: rows.map(artifactFromRow) }),
       { httpMetadata: { contentType: "application/json" } },
