@@ -1,7 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const externalBaseUrl = process.env.E2E_BASE_URL;
-const baseURL = externalBaseUrl ?? "http://127.0.0.1:8788";
+const baseURL = externalBaseUrl ?? "https://127.0.0.1:8788";
 const sharedRoomContract = /two isolated visitors share one persistent, recoverable room/;
 const localStatePath = `.wrangler/e2e-state-${process.pid}`;
 
@@ -19,6 +19,7 @@ export default defineConfig({
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "line",
   use: {
     baseURL,
+    ignoreHTTPSErrors: !externalBaseUrl,
     trace: externalBaseUrl ? "off" : "retain-on-failure",
     screenshot: externalBaseUrl ? "off" : "only-on-failure",
     video: externalBaseUrl ? "off" : "retain-on-failure",
@@ -43,8 +44,9 @@ export default defineConfig({
     ? undefined
     : {
         command:
-          `npx wrangler dev --local --port 8788 --persist-to ${localStatePath} --var MODERATOR_TOKEN:e2e-moderator-token`,
+          `npx wrangler dev --local --local-protocol https --port 8788 --persist-to ${localStatePath} --var MODERATOR_TOKEN:e2e-moderator-token`,
         url: `${baseURL}/api/health`,
+        ignoreHTTPSErrors: true,
         timeout: 60_000,
         reuseExistingServer: false,
       },

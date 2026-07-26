@@ -136,7 +136,7 @@ elements.deselectArtifact.addEventListener("click", () => selectArtifact(null));
 elements.reportForm.addEventListener("submit", submitReport);
 elements.reportCancel.addEventListener("click", () => elements.reportDialog.close());
 
-document.querySelectorAll("[data-tool]").forEach((button) => {
+document.querySelectorAll(".tool-button[data-tool]").forEach((button) => {
   button.addEventListener("click", () => setTool(button.dataset.tool));
 });
 
@@ -1310,7 +1310,7 @@ function setTool(tool) {
   }
   state.tool = tool;
   elements.roomCanvas.dataset.tool = tool;
-  document.querySelectorAll("[data-tool]").forEach((button) => {
+  document.querySelectorAll(".tool-button[data-tool]").forEach((button) => {
     const active = button.dataset.tool === tool;
     button.classList.toggle("is-active", active);
     button.setAttribute("aria-pressed", String(active));
