@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "wrangler dev --local",
     "typecheck": "tsc --noEmit && node --check public/app.js",
-    "test": "vitest run",
+    "test": "vitest run --max-workers=1 --no-isolate",
     "test:e2e": "playwright test",
     "build": "wrangler deploy --dry-run --outdir .wrangler/build",
     "check": "npm run typecheck && npm run test && npm run build",
@@ -14,6 +14,7 @@
     "load:test": "node scripts/load-test.mjs"
   },
   "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.18.8",
     "@cloudflare/workers-types": "5.20260726.1",
     "@playwright/test": "1.62.0",
     "typescript": "7.0.2",
