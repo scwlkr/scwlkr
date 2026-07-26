@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "scwlkr-room",
+  "name": "scwlkr-room-preview",
   "main": "src/worker.ts",
   "compatibility_date": "2026-07-26",
   "compatibility_flags": ["nodejs_compat"],
@@ -22,6 +22,38 @@
     {
       "tag": "v1",
       "new_sqlite_classes": ["Room"]
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "ARCHIVE",
+      "bucket_name": "scwlkr-room-preview-archive"
+    }
+  ],
+  "ratelimits": [
+    {
+      "name": "SESSION_RATE_LIMITER",
+      "namespace_id": "2026072603",
+      "simple": {
+        "limit": 60,
+        "period": 60
+      }
+    },
+    {
+      "name": "WS_RATE_LIMITER",
+      "namespace_id": "2026072604",
+      "simple": {
+        "limit": 120,
+        "period": 60
+      }
+    },
+    {
+      "name": "READ_RATE_LIMITER",
+      "namespace_id": "2026072606",
+      "simple": {
+        "limit": 60,
+        "period": 60
+      }
     }
   ],
   "observability": {

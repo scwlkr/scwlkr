@@ -30,6 +30,32 @@
       "bucket_name": "scwlkr-room-archive"
     }
   ],
+  "ratelimits": [
+    {
+      "name": "SESSION_RATE_LIMITER",
+      "namespace_id": "2026072601",
+      "simple": {
+        "limit": 60,
+        "period": 60
+      }
+    },
+    {
+      "name": "WS_RATE_LIMITER",
+      "namespace_id": "2026072602",
+      "simple": {
+        "limit": 120,
+        "period": 60
+      }
+    },
+    {
+      "name": "READ_RATE_LIMITER",
+      "namespace_id": "2026072605",
+      "simple": {
+        "limit": 60,
+        "period": 60
+      }
+    }
+  ],
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1

@@ -6,7 +6,7 @@ The implementation is intentionally small:
 
 - one Cloudflare Worker serves the static browser client and routes `/api/*` and `/ws`;
 - one SQLite-backed Durable Object named `ROOM_1` orders realtime mutations and stores active room state;
-- one private R2 bucket, `scwlkr-room-archive`, receives cold archives before old artifacts leave active state.
+- one private R2 bucket per deployed environment receives cold archives before old artifacts leave active state: `scwlkr-room-preview-archive` for preview and `scwlkr-room-archive` for production.
 
 The domain contract and vocabulary are in [CONTEXT.md](./CONTEXT.md). The runtime decision is recorded in [ADR 0001](./docs/adr/0001-cloudflare-one-room-runtime.md).
 
@@ -16,22 +16,19 @@ Requirements: Node.js 22 or newer and npm.
 
 ```sh
 npm ci
-npx playwright install chromium
+npx playwright install chromium firefox webkit
 npm run dev
 ```
 
 Wrangler serves the application at `http://127.0.0.1:8787` by default and emulates the Durable Object and R2 bindings locally.
 
-Run the deterministic checks:
+Run the complete release gate, including Chromium, Firefox, and WebKit:
 
 ```sh
-npm run typecheck
-npm test
-npm run build
-npm run test:e2e
+npm run release:check
 ```
 
-Or run the non-browser checks together:
+For a faster non-browser loop:
 
 ```sh
 npm run check
@@ -45,13 +42,13 @@ BASE_URL=http://127.0.0.1:8787 CLIENTS=50 npm run load:test
 
 ## Deploy
 
-Production is Cloudflare Workers with Static Assets, Durable Objects, and R2. A first deployment needs the R2 bucket and the `MODERATOR_TOKEN` Worker secret. Never commit or print that token.
+Production is Cloudflare Workers with Static Assets, Durable Objects, and R2. Preview and production use different Worker names, Durable Object namespaces, rate-limit namespaces, and R2 buckets. Both deployments require the `MODERATOR_TOKEN` secret; never commit or print it.
 
 ```sh
 npx wrangler login
+npx wrangler r2 bucket create scwlkr-room-preview-archive
 npx wrangler r2 bucket create scwlkr-room-archive
-npm run deploy
-npx wrangler secret put MODERATOR_TOKEN
+npm run deploy:preview
 ```
 
-The first deploy creates the Worker. Generate and save a random moderation credential in the password manager, then enter it only at Wrangler's hidden prompt. Setting the secret immediately creates and deploys a new version; keep the site on `workers.dev` while doing both. Prove that final generated deployment before attaching `scwlkr.com`. The complete deployment, custom-domain cutover, verification, and rollback procedure is in [the deployment runbook](./docs/runbooks/deploy-and-cutover.md). Health checks, moderation safety, archival, and incident handling are in [the operations runbook](./docs/runbooks/operations.md).
+Provision the preview secret directly from 1Password, then run mutating browser and 50-Visitor proof only against preview. Production proof is read-only (`npm run verify:public`) plus one real owner browser entry; it never seeds fake Artifacts. The exact secret commands, deployment order, custom-domain cutover, verification, and rollback procedure are in [the deployment runbook](./docs/runbooks/deploy-and-cutover.md). Readiness monitoring, moderation safety, budgets, archival, and incident handling are in [the operations runbook](./docs/runbooks/operations.md).

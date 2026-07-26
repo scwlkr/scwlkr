@@ -1,10 +1,21 @@
 const SVG_NS = "http://www.w3.org/2000/svg";
 const ROOM_WIDTH = 1000;
 const ROOM_HEIGHT = 640;
+const ROOM_CAPACITY = 64;
 const OBJECT_ALLOWANCE_MS = 24 * 60 * 60 * 1000;
+const ENTRY_OCCUPANCY_REFRESH_MS = 5 * 60 * 1000;
+const OUTBOX_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
+const DRAWING_PREVIEW_INTERVAL_MS = 250;
+const DRAWING_PREVIEW_EXPIRY_MS = 3000;
 const OUTBOX_KEY = "room_1.outbox.v1";
 const COLORS = new Set(["chalk", "rust", "moss", "sky", "gold"]);
 const SHAPES = new Set(["crate", "lamp", "stool", "plant"]);
+const OBJECT_DETAILS = new Set(["plain", "star", "stripe", "eye"]);
+const lowEffects =
+  window.matchMedia("(prefers-reduced-motion: reduce), (update: slow)").matches ||
+  (Number.isFinite(navigator.hardwareConcurrency) && navigator.hardwareConcurrency > 0 && navigator.hardwareConcurrency <= 2) ||
+  (Number.isFinite(navigator.deviceMemory) && navigator.deviceMemory > 0 && navigator.deviceMemory <= 2);
+document.documentElement.classList.toggle("low-effects", lowEffects);
 const restoredOutbox = loadOutbox();
 
 const elements = {
@@ -23,6 +34,7 @@ const elements = {
   peopleClose: document.querySelector("#people-close"),
   peopleList: document.querySelector("#people-list"),
   roomCanvas: document.querySelector("#room-canvas"),
+  persistentDrawingsLayer: document.querySelector("#persistent-drawings-layer"),
   drawingsLayer: document.querySelector("#drawings-layer"),
   artifactsLayer: document.querySelector("#artifacts-layer"),
   presenceLayer: document.querySelector("#presence-layer"),
@@ -60,9 +72,12 @@ const state = {
   selfPresenceId: null,
   artifacts: new Map(),
   artifactElements: new Map(),
+  artifactActionActors: new Map(),
   presence: new Map(),
   cursorElements: new Map(),
   cursorTimers: new Map(),
+  drawingPreviewElements: new Map(),
+  drawingPreviewTimers: new Map(),
   mutedPresence: new Set(),
   outbox: restoredOutbox,
   inFlight: new Set(),
@@ -75,9 +90,15 @@ const state = {
   color: "chalk",
   width: 3,
   shape: "crate",
+  detail: "plain",
   quota: { ink: 1200, inkCapacity: 1200, lastObjectAt: null },
   objectQueued: restoredOutbox.some((message) => message.type === "object.create"),
   fixturePending: restoredOutbox.some((message) => message.type === "fixture.toggle"),
+  fixture: null,
+  fixtureActionActor: null,
+  occupancy: 0,
+  entryOccupancyRefreshedAt: 0,
+  roomFull: false,
   selectedId: null,
   drawing: null,
   drag: null,
@@ -131,6 +152,10 @@ document.querySelectorAll("[data-shape]").forEach((button) => {
   button.addEventListener("click", () => setShape(button.dataset.shape));
 });
 
+document.querySelectorAll("[data-detail]").forEach((button) => {
+  button.addEventListener("click", () => setDetail(button.dataset.detail));
+});
+
 document.querySelectorAll("[data-close-composer]").forEach((button) => {
   button.addEventListener("click", () => setTool("move"));
 });
@@ -139,6 +164,11 @@ document.addEventListener("keydown", (event) => {
   if (event.key !== "Escape") return;
   togglePeoplePanel(false);
   if (elements.reportDialog.open) elements.reportDialog.close();
+  if (state.drawing) {
+    cancelDrawing();
+    setTool("move");
+    return;
+  }
   if (state.tool !== "move") setTool("move");
   else selectArtifact(null);
 });
@@ -153,16 +183,25 @@ window.addEventListener("offline", () => {
 });
 
 document.addEventListener("visibilitychange", () => {
-  if (!document.hidden && state.entered && !isSocketOpen()) connectSocket();
+  if (document.hidden) return;
+  if (!state.entered) void refreshEntryOccupancy();
+  else if (!isSocketOpen()) connectSocket();
 });
 
-void refreshEntryOccupancy();
-window.setInterval(() => {
-  if (!state.entered) void refreshEntryOccupancy();
-  updateObjectAllowance();
-}, 15_000);
+void refreshEntryOccupancy(true);
+window.setInterval(updateObjectAllowance, 15_000);
+window.setInterval(() => void refreshEntryOccupancy(), ENTRY_OCCUPANCY_REFRESH_MS);
 
-async function refreshEntryOccupancy() {
+async function refreshEntryOccupancy(force = false) {
+  if (state.entered || document.visibilityState !== "visible") return;
+  const now = Date.now();
+  if (!force && now - state.entryOccupancyRefreshedAt < ENTRY_OCCUPANCY_REFRESH_MS) return;
+  state.entryOccupancyRefreshedAt = now;
+  const occupancy = await fetchOccupancy();
+  if (occupancy === null) elements.occupancyEntry.textContent = "?";
+}
+
+async function fetchOccupancy() {
   try {
     const response = await fetch("/api/occupancy", {
       headers: { Accept: "application/json" },
@@ -170,9 +209,11 @@ async function refreshEntryOccupancy() {
     });
     if (!response.ok) throw new Error("occupancy unavailable");
     const data = await response.json();
+    if (!Number.isFinite(data.occupancy)) throw new Error("occupancy invalid");
     setOccupancy(data.occupancy);
+    return data.occupancy;
   } catch {
-    elements.occupancyEntry.textContent = "?";
+    return null;
   }
 }
 
@@ -218,10 +259,13 @@ function connectSocket() {
   }
 
   window.clearTimeout(state.reconnectTimer);
-  setConnection(
-    state.reconnectAttempt > 0 ? "reconnecting" : "connecting",
-    state.reconnectAttempt > 0 ? "RECONNECTING" : "CONNECTING",
-  );
+  if (state.roomFull) setConnection("full", "ROOM FULL · RETRYING");
+  else {
+    setConnection(
+      state.reconnectAttempt > 0 ? "reconnecting" : "connecting",
+      state.reconnectAttempt > 0 ? "RECONNECTING" : "CONNECTING",
+    );
+  }
   const scheme = window.location.protocol === "https:" ? "wss:" : "ws:";
   const socket = new WebSocket(`${scheme}//${window.location.host}/ws`);
   state.socket = socket;
@@ -229,13 +273,14 @@ function connectSocket() {
   socket.addEventListener("open", () => {
     if (state.socket !== socket) return;
     state.reconnectAttempt = 0;
+    state.roomFull = false;
     state.inFlight.clear();
     setConnection("connected", "CONNECTED");
     flushOutbox();
     window.clearInterval(state.heartbeatTimer);
     state.heartbeatTimer = window.setInterval(() => {
       if (isSocketOpen()) socket.send(JSON.stringify({ type: "ping" }));
-    }, 25_000);
+    }, 60_000);
   });
 
   socket.addEventListener("message", (event) => {
@@ -248,17 +293,26 @@ function connectSocket() {
     handleServerMessage(message);
   });
 
-  socket.addEventListener("close", () => {
+  socket.addEventListener("close", async () => {
     if (state.socket !== socket) return;
     state.socket = null;
     state.inFlight.clear();
     window.clearInterval(state.heartbeatTimer);
     clearRemoteCursors();
+    clearRemoteDrawingPreviews();
     if (!navigator.onLine) {
       setConnection("offline", "OFFLINE");
       return;
     }
-    setConnection("reconnecting", "RECONNECTING");
+    const occupancy = document.visibilityState === "visible" ? await fetchOccupancy() : null;
+    if (state.socket) return;
+    state.roomFull = document.visibilityState === "visible" && occupancy !== null && occupancy >= ROOM_CAPACITY;
+    if (state.roomFull) {
+      setConnection("full", "ROOM FULL · RETRYING");
+      showMessage("ROOM FULL. THE DOOR WILL KEEP TRYING.");
+    } else {
+      setConnection("reconnecting", "RECONNECTING");
+    }
     scheduleReconnect();
   });
 
@@ -293,6 +347,7 @@ function handleServerMessage(message) {
 function applySnapshot(snapshot) {
   cancelDrawing();
   cancelDragging();
+  clearRemoteDrawingPreviews();
   selectArtifact(null);
   state.selfPresenceId = typeof snapshot.self?.presenceId === "string" ? snapshot.self.presenceId : null;
   if (typeof snapshot.self?.displayName === "string") {
@@ -302,11 +357,15 @@ function applySnapshot(snapshot) {
 
   state.artifacts.clear();
   state.artifactElements.clear();
+  state.artifactActionActors.clear();
+  elements.persistentDrawingsLayer.replaceChildren();
   elements.drawingsLayer.replaceChildren();
   elements.artifactsLayer.replaceChildren();
 
   if (Array.isArray(snapshot.artifacts)) {
-    snapshot.artifacts.forEach((artifact) => upsertArtifact(artifact));
+    snapshot.artifacts.forEach((artifact) => upsertArtifact(artifact, true));
+    sortArtifactElements();
+    setRovingArtifact(latestArtifactId());
   }
 
   if (snapshot.quota && typeof snapshot.quota === "object") {
@@ -317,6 +376,7 @@ function applySnapshot(snapshot) {
   }
 
   if (Array.isArray(snapshot.fixtures)) {
+    state.fixtureActionActor = null;
     snapshot.fixtures.forEach((fixture) => applyFixture(fixture));
   }
 
@@ -341,7 +401,7 @@ function handleMutationResult(result) {
       state.quota.ink = result.ink;
       updateQuotaDisplay();
     }
-    if (queued?.type === "object.create") {
+    if (queued?.type === "object.create" && result.replayed !== true) {
       state.quota.lastObjectAt = Date.now();
       updateObjectAllowance();
     }
@@ -350,7 +410,7 @@ function handleMutationResult(result) {
   }
 
   if (result.artifact && typeof result.artifact === "object") upsertArtifact(result.artifact);
-  if (queued?.type === "object.create" && result.code === "OBJECT_COOLDOWN") {
+  if (queued?.type === "object.create" && result.code === "OBJECT_COOLDOWN" && result.replayed !== true) {
     state.quota.lastObjectAt = Date.now();
   }
   updateObjectAllowance();
@@ -366,16 +426,27 @@ function applyEvent(event) {
     case "presence.cursor":
       updateRemoteCursor(event);
       break;
+    case "presence.cursors":
+      if (Array.isArray(event.cursors)) event.cursors.forEach(updateRemoteCursor);
+      break;
+    case "drawing.previews":
+      if (Array.isArray(event.previews)) event.previews.forEach(updateRemoteDrawingPreview);
+      break;
+    case "drawing.preview.removed":
+      removeRemoteDrawingPreview(event.presenceId, event.previewId);
+      break;
     case "artifact.upsert":
-      upsertArtifact(event.artifact);
+      applyArtifactUpsertEvent(event);
       break;
     case "artifact.removed":
-      removeArtifact(event.artifactId);
+      applyArtifactRemovedEvent(event);
+      break;
+    case "artifacts.removed":
+      if (Array.isArray(event.artifactIds)) event.artifactIds.forEach(removeArtifact);
       break;
     case "fixture.updated":
-      applyFixture(event.fixture);
+      applyFixture(event.fixture, event.actorPresenceId);
       break;
-    case "report.accepted":
     case "pong":
       break;
     default:
@@ -396,8 +467,11 @@ function updatePresence(presence, occupancy) {
   for (const presenceId of state.cursorElements.keys()) {
     if (!state.presence.has(presenceId)) removeRemoteCursor(presenceId);
   }
-  for (const presenceId of state.mutedPresence) {
-    if (!state.presence.has(presenceId)) state.mutedPresence.delete(presenceId);
+  for (const [key, element] of state.drawingPreviewElements) {
+    if (!state.presence.has(element.dataset.presenceId)) removeRemoteDrawingPreviewByKey(key);
+  }
+  for (const presenceId of Array.from(state.mutedPresence)) {
+    if (!state.presence.has(presenceId)) setPresenceMuted(presenceId, false);
   }
 
   setOccupancy(Number.isFinite(occupancy) ? occupancy : state.presence.size);
@@ -436,9 +510,7 @@ function renderPeople() {
       button.textContent = muted ? "UNMUTE" : "MUTE";
       button.setAttribute("aria-pressed", String(muted));
       button.addEventListener("click", () => {
-        if (muted) state.mutedPresence.delete(visitor.presenceId);
-        else state.mutedPresence.add(visitor.presenceId);
-        if (!muted) removeRemoteCursor(visitor.presenceId);
+        setPresenceMuted(visitor.presenceId, !muted);
         renderPeople();
       });
       item.append(button);
@@ -478,7 +550,7 @@ function updateRemoteCursor(event) {
   window.clearTimeout(state.cursorTimers.get(event.presenceId));
   state.cursorTimers.set(
     event.presenceId,
-    window.setTimeout(() => removeRemoteCursor(event.presenceId), 3200),
+    window.setTimeout(() => removeRemoteCursor(event.presenceId), Math.max(4000, state.occupancy * 80)),
   );
 }
 
@@ -493,10 +565,145 @@ function clearRemoteCursors() {
   Array.from(state.cursorElements.keys()).forEach(removeRemoteCursor);
 }
 
-function upsertArtifact(artifact) {
-  if (!artifact || typeof artifact.id !== "string" || !["drawing", "note", "object"].includes(artifact.kind)) return;
+function updateRemoteDrawingPreview(preview) {
+  if (
+    !preview ||
+    typeof preview.presenceId !== "string" ||
+    typeof preview.previewId !== "string" ||
+    preview.presenceId === state.selfPresenceId ||
+    state.mutedPresence.has(preview.presenceId)
+  ) {
+    return;
+  }
+
+  const points = Array.isArray(preview.points) ? preview.points.filter(isPoint) : [];
+  if (points.length < 2 || points.length > 80) return;
+  const color = COLORS.has(preview.color) ? preview.color : "chalk";
+  const width = clamp(Number(preview.width) || 3, 1, 12);
+  const key = drawingPreviewKey(preview.presenceId, preview.previewId);
+  let path = state.drawingPreviewElements.get(key);
+  if (!path) {
+    path = svgElement("path", {
+      class: `drawing live-drawing-preview ink-${color}`,
+      "data-live-preview": preview.previewId,
+      "data-presence-id": preview.presenceId,
+      "data-preview-id": preview.previewId,
+    });
+    elements.drawingsLayer.append(path);
+    state.drawingPreviewElements.set(key, path);
+  }
+
+  path.setAttribute("class", `drawing live-drawing-preview ink-${color}`);
+  path.setAttribute("d", pointsToPath(points));
+  path.setAttribute("stroke-width", String(width));
+  window.clearTimeout(state.drawingPreviewTimers.get(key));
+  state.drawingPreviewTimers.set(
+    key,
+    window.setTimeout(() => removeRemoteDrawingPreviewByKey(key), DRAWING_PREVIEW_EXPIRY_MS),
+  );
+}
+
+function removeRemoteDrawingPreview(presenceId, previewId) {
+  if (typeof presenceId !== "string" || typeof previewId !== "string") return;
+  removeRemoteDrawingPreviewByKey(drawingPreviewKey(presenceId, previewId));
+}
+
+function removeRemoteDrawingPreviewByKey(key) {
+  state.drawingPreviewElements.get(key)?.remove();
+  state.drawingPreviewElements.delete(key);
+  window.clearTimeout(state.drawingPreviewTimers.get(key));
+  state.drawingPreviewTimers.delete(key);
+}
+
+function removeRemoteDrawingPreviewsForPresence(presenceId) {
+  for (const [key, element] of state.drawingPreviewElements) {
+    if (element.dataset.presenceId === presenceId) removeRemoteDrawingPreviewByKey(key);
+  }
+}
+
+function removeRemoteDrawingPreviewsByPreviewId(previewId) {
+  for (const [key, element] of state.drawingPreviewElements) {
+    if (element.dataset.previewId === previewId) removeRemoteDrawingPreviewByKey(key);
+  }
+}
+
+function clearRemoteDrawingPreviews() {
+  Array.from(state.drawingPreviewElements.keys()).forEach(removeRemoteDrawingPreviewByKey);
+}
+
+function drawingPreviewKey(presenceId, previewId) {
+  return `${presenceId}:${previewId}`;
+}
+
+function applyArtifactUpsertEvent(event) {
+  const artifact = event?.artifact;
+  if (!isSupportedArtifact(artifact)) return;
+  const actorPresenceId = typeof event.actorPresenceId === "string" ? event.actorPresenceId : null;
+  if (actorPresenceId && state.mutedPresence.has(actorPresenceId)) {
+    state.artifacts.set(artifact.id, artifact);
+    state.artifactActionActors.set(artifact.id, actorPresenceId);
+    removePendingPreviewForArtifact(artifact);
+    return;
+  }
+  state.artifactActionActors.delete(artifact.id);
+  upsertArtifact(artifact);
+}
+
+function applyArtifactRemovedEvent(event) {
+  if (typeof event?.artifactId !== "string") return;
+  const actorPresenceId = typeof event.actorPresenceId === "string" ? event.actorPresenceId : null;
+  if (actorPresenceId && state.mutedPresence.has(actorPresenceId)) {
+    state.artifacts.delete(event.artifactId);
+    state.artifactActionActors.set(event.artifactId, actorPresenceId);
+    return;
+  }
+  state.artifactActionActors.delete(event.artifactId);
+  removeArtifact(event.artifactId);
+}
+
+function setPresenceMuted(presenceId, muted) {
+  if (typeof presenceId !== "string") return;
+  if (muted) {
+    state.mutedPresence.add(presenceId);
+    removeRemoteCursor(presenceId);
+    removeRemoteDrawingPreviewsForPresence(presenceId);
+    return;
+  }
+  state.mutedPresence.delete(presenceId);
+  reconcileMutedArtifactActions(presenceId);
+  reconcileMutedFixtureAction(presenceId);
+}
+
+function reconcileMutedArtifactActions(presenceId) {
+  for (const [artifactId, actorPresenceId] of Array.from(state.artifactActionActors)) {
+    if (actorPresenceId !== presenceId) continue;
+    state.artifactActionActors.delete(artifactId);
+    const artifact = state.artifacts.get(artifactId);
+    if (artifact) upsertArtifact(artifact);
+    else removeArtifact(artifactId);
+  }
+}
+
+function artifactHasMutedAction(artifactId) {
+  const actorPresenceId = state.artifactActionActors.get(artifactId);
+  return typeof actorPresenceId === "string" && state.mutedPresence.has(actorPresenceId);
+}
+
+function reconcileMutedFixtureAction(presenceId) {
+  if (state.fixtureActionActor !== presenceId || !state.fixture) return;
+  state.fixtureActionActor = null;
+  renderFixture(state.fixture);
+}
+
+function isSupportedArtifact(artifact) {
+  return artifact && typeof artifact.id === "string" && ["drawing", "note", "object"].includes(artifact.kind);
+}
+
+function upsertArtifact(artifact, deferSort = false) {
+  if (!isSupportedArtifact(artifact)) return;
   state.artifacts.set(artifact.id, artifact);
   const oldElement = state.artifactElements.get(artifact.id);
+  const wasRoving = oldElement?.getAttribute("tabindex") === "0";
   if (oldElement) oldElement.remove();
 
   let element = null;
@@ -505,11 +712,71 @@ function upsertArtifact(artifact) {
   if (artifact.kind === "object") element = renderObject(artifact);
   if (!element) return;
 
+  element.setAttribute("data-z-index", String(artifactStackIndex(artifact)));
   state.artifactElements.set(artifact.id, element);
-  if (artifact.kind === "drawing") elements.drawingsLayer.append(element);
-  else elements.artifactsLayer.append(element);
+  const layer = artifactLayer(artifact);
+  if (deferSort) layer.append(element);
+  else insertArtifactElement(element, artifact, layer);
+  if (wasRoving || !document.querySelector('[data-artifact-id][tabindex="0"]')) {
+    setRovingArtifact(artifact.id);
+  }
   removePendingPreviewForArtifact(artifact);
   if (state.selectedId === artifact.id) selectArtifact(artifact.id);
+}
+
+function artifactLayer(artifact) {
+  return artifact.kind === "drawing" ? elements.persistentDrawingsLayer : elements.artifactsLayer;
+}
+
+function insertArtifactElement(element, artifact, layer) {
+  const last = layer.lastElementChild;
+  if (!last || compareArtifactToElement(artifact, last) >= 0) {
+    layer.append(element);
+    return;
+  }
+
+  for (const sibling of layer.children) {
+    if (compareArtifactToElement(artifact, sibling) < 0) {
+      layer.insertBefore(element, sibling);
+      return;
+    }
+  }
+  layer.append(element);
+}
+
+function compareArtifactToElement(artifact, element) {
+  const zIndex = artifactStackIndex(artifact);
+  const siblingZIndex = Number(element.getAttribute("data-z-index"));
+  const zDifference = zIndex - (Number.isFinite(siblingZIndex) ? siblingZIndex : 0);
+  if (zDifference !== 0) return zDifference;
+  return artifact.id.localeCompare(element.dataset.artifactId || "");
+}
+
+function sortArtifactElements() {
+  Array.from(state.artifacts.values())
+    .filter((artifact) => state.artifactElements.has(artifact.id))
+    .sort((left, right) => artifactStackIndex(left) - artifactStackIndex(right) || left.id.localeCompare(right.id))
+    .forEach((artifact) => artifactLayer(artifact).append(state.artifactElements.get(artifact.id)));
+}
+
+function latestArtifactId() {
+  return Array.from(state.artifacts.values())
+    .filter((artifact) => state.artifactElements.has(artifact.id))
+    .sort((left, right) => artifactStackIndex(left) - artifactStackIndex(right) || left.id.localeCompare(right.id))
+    .at(-1)?.id ?? null;
+}
+
+function setRovingArtifact(artifactId) {
+  document.querySelectorAll('[data-artifact-id][tabindex="0"]').forEach((element) => {
+    element.setAttribute("tabindex", "-1");
+  });
+  state.artifactElements.get(artifactId)?.setAttribute("tabindex", "0");
+}
+
+function artifactStackIndex(artifact) {
+  if (Number.isFinite(artifact.zIndex)) return artifact.zIndex;
+  if (Number.isFinite(artifact.createdAt)) return artifact.createdAt;
+  return 0;
 }
 
 function renderDrawing(artifact) {
@@ -521,7 +788,7 @@ function renderDrawing(artifact) {
     class: `artifact artifact-drawing drawing ink-${color}`,
     d: pointsToPath(points),
     "stroke-width": width,
-    tabindex: 0,
+    tabindex: -1,
     role: "button",
     "aria-label": "Shared drawing. Select to report.",
     "data-artifact-id": artifact.id,
@@ -535,7 +802,7 @@ function renderNote(artifact) {
   if (!isPoint(artifact.payload?.point)) return null;
   const group = svgElement("g", {
     class: "artifact artifact-note",
-    tabindex: 0,
+    tabindex: -1,
     role: "button",
     "aria-label": `Shared note: ${String(artifact.payload?.text || "blank note").slice(0, 90)}`,
     "data-artifact-id": artifact.id,
@@ -561,21 +828,53 @@ function renderObject(artifact) {
   if (!isPoint(artifact.payload?.point)) return null;
   const color = COLORS.has(artifact.payload?.color) ? artifact.payload.color : "rust";
   const shape = SHAPES.has(artifact.payload?.shape) ? artifact.payload.shape : "crate";
+  const detail = OBJECT_DETAILS.has(artifact.payload?.detail) ? artifact.payload.detail : "plain";
+  const description = detail === "plain" ? `plain ${color} ${shape}` : `${color} ${shape} with ${detail} detail`;
   const group = svgElement("g", {
     class: `artifact artifact-object object-${shape} ink-${color}`,
-    tabindex: 0,
+    tabindex: -1,
     role: "button",
-    "aria-label": `Shared ${shape}. Drag to move, or select for more actions.`,
+    "aria-label": `Shared ${description}. Drag to move, or select for more actions.`,
     "data-artifact-id": artifact.id,
+    "data-object-detail": detail,
   });
 
   if (shape === "lamp") appendLamp(group);
   else if (shape === "stool") appendStool(group);
   else if (shape === "plant") appendPlant(group);
   else appendCrate(group);
+  appendObjectDetail(group, detail, shape);
 
   setArtifactTransform(group, artifact);
   return group;
+}
+
+function appendObjectDetail(group, detail, shape) {
+  if (detail === "plain") return;
+  const verticalOffset = shape === "lamp" ? -36 : shape === "stool" ? -26 : shape === "plant" ? 39 : 0;
+  const detailGroup = svgElement("g", {
+    class: `object-detail object-detail-${detail}`,
+    transform: `translate(0 ${verticalOffset})`,
+    "aria-hidden": "true",
+  });
+  if (detail === "star") {
+    detailGroup.append(
+      svgElement("path", {
+        class: "detail-star",
+        d: "M0-14L4-5L14-4L6 3L9 13L0 7L-9 13L-6 3L-14-4L-4-5Z",
+      }),
+    );
+  } else if (detail === "stripe") {
+    detailGroup.append(
+      svgElement("path", { class: "detail-stripe", d: "M-18-9L18-13M-18 1L18-3M-18 11L18 7" }),
+    );
+  } else if (detail === "eye") {
+    detailGroup.append(
+      svgElement("ellipse", { class: "detail-eye", cx: 0, cy: 0, rx: 16, ry: 10 }),
+      svgElement("circle", { class: "detail-pupil", cx: 0, cy: 0, r: 4 }),
+    );
+  }
+  group.append(detailGroup);
 }
 
 function appendCrate(group) {
@@ -617,13 +916,17 @@ function appendPlant(group) {
 
 function removeArtifact(artifactId) {
   if (typeof artifactId !== "string") return;
+  const wasRoving = state.artifactElements.get(artifactId)?.getAttribute("tabindex") === "0";
   state.artifacts.delete(artifactId);
+  state.artifactActionActors.delete(artifactId);
   state.artifactElements.get(artifactId)?.remove();
   state.artifactElements.delete(artifactId);
   if (state.selectedId === artifactId) selectArtifact(null);
+  if (wasRoving) setRovingArtifact(latestArtifactId());
 }
 
 function rerenderArtifact(artifactId) {
+  if (artifactHasMutedAction(artifactId)) return;
   const artifact = state.artifacts.get(artifactId);
   if (artifact) upsertArtifact(artifact);
 }
@@ -634,8 +937,18 @@ function setArtifactTransform(element, artifact, point = artifact.payload?.point
   element.setAttribute("transform", `translate(${point.x} ${point.y}) rotate(${angle})`);
 }
 
-function applyFixture(fixture) {
+function applyFixture(fixture, actorPresenceId = null) {
   if (!fixture || fixture.id !== "light" || !["on", "off"].includes(fixture.state)) return;
+  state.fixture = fixture;
+  if (typeof actorPresenceId === "string" && state.mutedPresence.has(actorPresenceId)) {
+    state.fixtureActionActor = actorPresenceId;
+    return;
+  }
+  state.fixtureActionActor = null;
+  renderFixture(fixture);
+}
+
+function renderFixture(fixture) {
   const on = fixture.state === "on";
   elements.roomScreen.classList.toggle("light-off", !on);
   elements.lightSwitch.setAttribute("aria-pressed", String(on));
@@ -654,7 +967,6 @@ function toggleLight() {
 function handlePointerDown(event) {
   if (event.button !== 0) return;
   const point = eventPoint(event);
-  queueCursor(point);
   state.placementPoint = point;
   updatePlacementTarget();
 
@@ -663,6 +975,8 @@ function handlePointerDown(event) {
     startDrawing(event, point);
     return;
   }
+
+  queueCursor(point);
 
   if (state.tool === "note") {
     event.preventDefault();
@@ -686,6 +1000,10 @@ function handlePointerDown(event) {
   const artifact = state.artifacts.get(artifactId);
   selectArtifact(artifactId);
   if (!artifact || artifact.kind === "drawing") return;
+  if (artifactHasMutedAction(artifactId)) {
+    showMessage("THAT THING IS QUIET FOR NOW.");
+    return;
+  }
   if (hasPendingMove(artifactId)) {
     showMessage("SOMEONE IS STILL MOVING THAT.");
     return;
@@ -708,7 +1026,6 @@ function handlePointerDown(event) {
 
 function handlePointerMove(event) {
   const point = eventPoint(event);
-  queueCursor(point);
 
   if (state.drawing?.pointerId === event.pointerId) {
     event.preventDefault();
@@ -716,9 +1033,12 @@ function handlePointerMove(event) {
     if (state.drawing.points.length < 80 && distance(previous, point) >= 4) {
       state.drawing.points.push(point);
       elements.strokePreview.setAttribute("d", pointsToPath(state.drawing.points));
+      scheduleDrawingPreview(state.drawing);
     }
     return;
   }
+
+  queueCursor(point);
 
   if (state.drag?.pointerId === event.pointerId) {
     event.preventDefault();
@@ -741,9 +1061,21 @@ function handlePointerCancel(event) {
 }
 
 function startDrawing(event, point) {
-  state.drawing = { pointerId: event.pointerId, points: [point] };
-  elements.strokePreview.setAttribute("class", `stroke-preview ink-${state.color}`);
-  elements.strokePreview.setAttribute("stroke-width", String(state.width));
+  window.clearTimeout(state.cursorSendTimer);
+  state.cursorSendTimer = null;
+  state.queuedCursor = null;
+  state.drawing = {
+    pointerId: event.pointerId,
+    mutationId: makeMutationId(),
+    points: [point],
+    width: state.width,
+    color: state.color,
+    previewSent: false,
+    previewTimer: null,
+    lastPreviewSentAt: 0,
+  };
+  elements.strokePreview.setAttribute("class", `stroke-preview ink-${state.drawing.color}`);
+  elements.strokePreview.setAttribute("stroke-width", String(state.drawing.width));
   elements.strokePreview.setAttribute("d", `M${point.x} ${point.y}`);
   elements.roomCanvas.setPointerCapture(event.pointerId);
 }
@@ -751,23 +1083,37 @@ function startDrawing(event, point) {
 function finishDrawing(event) {
   const drawing = state.drawing;
   state.drawing = null;
+  if (drawing) window.clearTimeout(drawing.previewTimer);
   if (elements.roomCanvas.hasPointerCapture(event.pointerId)) elements.roomCanvas.releasePointerCapture(event.pointerId);
   elements.strokePreview.setAttribute("d", "");
   if (!drawing || drawing.points.length < 2) {
+    if (drawing?.previewSent) sendDrawingPreviewEnd(drawing);
     showMessage("A MARK NEEDS SOMEWHERE TO GO.");
     return;
   }
 
-  const mutationId = queueMutation("drawing.create", {
-    points: drawing.points,
-    width: state.width,
-    color: state.color,
-  });
-  renderPendingDrawing(mutationId, drawing.points, state.width, state.color);
+  queueMutation(
+    "drawing.create",
+    {
+      points: drawing.points,
+      width: drawing.width,
+      color: drawing.color,
+    },
+    drawing.mutationId,
+  );
+  renderPendingDrawing(drawing.mutationId, drawing.points, drawing.width, drawing.color);
 }
 
 function cancelDrawing() {
+  const drawing = state.drawing;
   state.drawing = null;
+  if (drawing) {
+    window.clearTimeout(drawing.previewTimer);
+    if (elements.roomCanvas.hasPointerCapture(drawing.pointerId)) {
+      elements.roomCanvas.releasePointerCapture(drawing.pointerId);
+    }
+    if (drawing.previewSent) sendDrawingPreviewEnd(drawing);
+  }
   elements.strokePreview.setAttribute("d", "");
 }
 
@@ -846,6 +1192,10 @@ function handleRoomKeydown(event) {
 function nudgeArtifact(artifactId, key, amount) {
   const artifact = state.artifacts.get(artifactId);
   if (!artifact || artifact.kind === "drawing" || !isPoint(artifact.payload?.point)) return;
+  if (artifactHasMutedAction(artifactId)) {
+    showMessage("THAT THING IS QUIET FOR NOW.");
+    return;
+  }
   if (hasPendingMove(artifactId)) {
     showMessage("SOMEONE IS STILL MOVING THAT.");
     return;
@@ -864,6 +1214,10 @@ function nudgeArtifact(artifactId, key, amount) {
 function rotateSelectedArtifact() {
   const artifact = state.artifacts.get(state.selectedId);
   if (!artifact || artifact.kind !== "object" || !isPoint(artifact.payload?.point)) return;
+  if (artifactHasMutedAction(artifact.id)) {
+    showMessage("THAT THING IS QUIET FOR NOW.");
+    return;
+  }
   if (hasPendingMove(artifact.id)) {
     showMessage("SOMEONE IS STILL MOVING THAT.");
     return;
@@ -886,6 +1240,7 @@ function selectArtifact(artifactId) {
     elements.selectedActions.hidden = true;
     return;
   }
+  setRovingArtifact(artifactId);
   state.artifactElements.get(artifactId)?.classList.add("is-selected");
   elements.selectedKind.textContent = artifact.kind.toUpperCase();
   elements.rotateArtifact.hidden = artifact.kind !== "object";
@@ -939,6 +1294,7 @@ function placeObject(point) {
   queueMutation("object.create", {
     shape: state.shape,
     color: state.color,
+    detail: state.detail,
     point: clampArtifactPoint(point),
   });
   updateObjectAllowance();
@@ -994,6 +1350,14 @@ function setShape(shape) {
   });
 }
 
+function setDetail(detail) {
+  if (!OBJECT_DETAILS.has(detail)) return;
+  state.detail = detail;
+  document.querySelectorAll("[data-detail]").forEach((button) => {
+    button.setAttribute("aria-pressed", String(button.dataset.detail === detail));
+  });
+}
+
 function updatePlacementTarget() {
   elements.placementTarget.setAttribute("transform", `translate(${state.placementPoint.x} ${state.placementPoint.y})`);
 }
@@ -1036,9 +1400,8 @@ function updateObjectAllowance() {
   toolButton.title = `Another object in about ${hours} hours`;
 }
 
-function queueMutation(type, payload) {
-  const mutationId = makeMutationId();
-  const message = { type, mutationId, payload };
+function queueMutation(type, payload, mutationId = makeMutationId()) {
+  const message = { type, mutationId, payload, queuedAt: Date.now() };
   state.outbox.push(message);
   saveOutbox();
   updateSaveStatus();
@@ -1074,16 +1437,23 @@ function settleMutation(mutationId) {
 
 function loadOutbox() {
   try {
-    const parsed = JSON.parse(localStorage.getItem(OUTBOX_KEY) || "[]");
+    const parsed = JSON.parse(sessionStorage.getItem(OUTBOX_KEY) || "[]");
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter(
-      (message) =>
-        message &&
-        typeof message.type === "string" &&
-        typeof message.mutationId === "string" &&
-        message.payload &&
-        typeof message.payload === "object",
-    );
+    const now = Date.now();
+    return parsed
+      .filter(
+        (message) =>
+          message &&
+          typeof message.type === "string" &&
+          typeof message.mutationId === "string" &&
+          message.payload &&
+          typeof message.payload === "object" &&
+          (!Number.isFinite(message.queuedAt) || now - message.queuedAt <= OUTBOX_RETENTION_MS),
+      )
+      .map((message) => ({
+        ...message,
+        queuedAt: Number.isFinite(message.queuedAt) ? message.queuedAt : now,
+      }));
   } catch {
     return [];
   }
@@ -1091,8 +1461,8 @@ function loadOutbox() {
 
 function saveOutbox() {
   try {
-    if (state.outbox.length === 0) localStorage.removeItem(OUTBOX_KEY);
-    else localStorage.setItem(OUTBOX_KEY, JSON.stringify(state.outbox));
+    if (state.outbox.length === 0) sessionStorage.removeItem(OUTBOX_KEY);
+    else sessionStorage.setItem(OUTBOX_KEY, JSON.stringify(state.outbox));
   } catch {
     showMessage("THIS BROWSER WILL NOT HOLD UNSENT THINGS.");
   }
@@ -1145,14 +1515,62 @@ function removePendingPreview(mutationId) {
 
 function removePendingPreviewForArtifact(artifact) {
   const prefix = `${artifact.kind}_`;
-  if (artifact.id.startsWith(prefix)) removePendingPreview(artifact.id.slice(prefix.length));
+  if (!artifact.id.startsWith(prefix)) return;
+  const mutationId = artifact.id.slice(prefix.length);
+  removePendingPreview(mutationId);
+  if (artifact.kind === "drawing") removeRemoteDrawingPreviewsByPreviewId(mutationId);
+}
+
+function scheduleDrawingPreview(drawing) {
+  if (state.drawing !== drawing || drawing.points.length < 2 || !isSocketOpen()) return;
+  const elapsed = performance.now() - drawing.lastPreviewSentAt;
+  if (!drawing.previewSent || elapsed >= DRAWING_PREVIEW_INTERVAL_MS) {
+    sendDrawingPreview(drawing);
+    return;
+  }
+  if (drawing.previewTimer) return;
+  drawing.previewTimer = window.setTimeout(() => {
+    drawing.previewTimer = null;
+    if (state.drawing === drawing) sendDrawingPreview(drawing);
+  }, DRAWING_PREVIEW_INTERVAL_MS - elapsed);
+}
+
+function sendDrawingPreview(drawing) {
+  if (state.drawing !== drawing || drawing.points.length < 2 || !isSocketOpen()) return;
+  try {
+    state.socket.send(
+      JSON.stringify({
+        type: "drawing.preview",
+        mutationId: drawing.mutationId,
+        payload: {
+          points: drawing.points,
+          width: drawing.width,
+          color: drawing.color,
+        },
+      }),
+    );
+    drawing.previewSent = true;
+    drawing.lastPreviewSentAt = performance.now();
+  } catch {
+    // Drawing previews are disposable. The completed stroke uses the durable outbox.
+  }
+}
+
+function sendDrawingPreviewEnd(drawing) {
+  if (!isSocketOpen()) return;
+  try {
+    state.socket.send(JSON.stringify({ type: "drawing.preview.end", mutationId: drawing.mutationId }));
+  } catch {
+    // Presence reconciliation and expiry also remove abandoned previews.
+  }
 }
 
 function queueCursor(point) {
-  if (!isSocketOpen()) return;
+  if (state.drawing || !isSocketOpen()) return;
   const now = performance.now();
   const elapsed = now - state.lastCursorSentAt;
-  if (elapsed >= 50) {
+  const interval = cursorSendInterval();
+  if (elapsed >= interval) {
     sendCursor(point);
     return;
   }
@@ -1160,19 +1578,24 @@ function queueCursor(point) {
   if (state.cursorSendTimer) return;
   state.cursorSendTimer = window.setTimeout(() => {
     state.cursorSendTimer = null;
-    if (state.queuedCursor) sendCursor(state.queuedCursor);
+    const queuedCursor = state.queuedCursor;
     state.queuedCursor = null;
-  }, 50 - elapsed);
+    if (queuedCursor) queueCursor(queuedCursor);
+  }, interval - elapsed);
 }
 
 function sendCursor(point) {
-  if (!isSocketOpen()) return;
+  if (state.drawing || !isSocketOpen()) return;
   state.lastCursorSentAt = performance.now();
   try {
     state.socket.send(JSON.stringify({ type: "cursor", payload: { point } }));
   } catch {
     // Presence is ephemeral. Persistent mutations remain in the outbox.
   }
+}
+
+function cursorSendInterval() {
+  return Math.max(250, state.occupancy * 20);
 }
 
 function hasPendingMove(artifactId) {
@@ -1187,6 +1610,7 @@ function setConnection(status, label) {
 
 function setOccupancy(value) {
   const occupancy = Number.isFinite(value) ? Math.max(0, Math.floor(value)) : 0;
+  state.occupancy = occupancy;
   elements.occupancyEntry.textContent = String(occupancy);
   elements.occupancyRoom.textContent = String(occupancy);
 }

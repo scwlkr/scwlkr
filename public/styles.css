@@ -352,12 +352,14 @@ button:disabled {
 }
 
 .connection-status[data-state="offline"],
-.connection-status[data-state="reconnecting"] {
+.connection-status[data-state="reconnecting"],
+.connection-status[data-state="full"] {
   color: #bd7a64;
 }
 
 .connection-status[data-state="offline"] .status-lamp,
-.connection-status[data-state="reconnecting"] .status-lamp {
+.connection-status[data-state="reconnecting"] .status-lamp,
+.connection-status[data-state="full"] .status-lamp {
   background: #b66250;
 }
 
@@ -979,6 +981,12 @@ button:disabled {
   stroke-dasharray: 9 5;
 }
 
+.live-drawing-preview {
+  opacity: 0.62;
+  pointer-events: none;
+  filter: drop-shadow(1px 1px 0 rgb(0 0 0 / 28%));
+}
+
 .artifact:focus-visible .artifact-hit,
 .artifact.is-selected .artifact-hit {
   fill: rgb(218 168 76 / 8%);
@@ -1053,6 +1061,37 @@ button:disabled {
   stroke-linecap: round;
   stroke-width: 3;
   vector-effect: non-scaling-stroke;
+}
+
+.artifact-object .object-detail {
+  pointer-events: none;
+}
+
+.artifact-object .detail-star {
+  fill: #ead38a;
+  stroke: #211c15;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.artifact-object .detail-stripe {
+  fill: none;
+  stroke: #eee3c6;
+  stroke-linecap: round;
+  stroke-width: 5;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 1px 0 #211c15);
+}
+
+.artifact-object .detail-eye {
+  fill: #eee3c6;
+  stroke: #211c15;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.artifact-object .detail-pupil {
+  fill: #211c15;
 }
 
 .artifact-object.ink-chalk {
@@ -1252,7 +1291,7 @@ button:disabled {
 }
 
 .object-composer {
-  width: min(36rem, calc(100vw - 1.5rem));
+  width: min(42rem, calc(100vw - 1.5rem));
 }
 
 .object-composer .composer-close {
@@ -1261,14 +1300,35 @@ button:disabled {
   right: 0.35rem;
 }
 
-.shape-picker {
+.object-builder {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.4rem;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1.25fr);
+  gap: 0.75rem;
   margin-top: 0.75rem;
 }
 
-.shape-picker button {
+.object-option {
+  min-width: 0;
+}
+
+.object-option-label {
+  display: block;
+  margin-bottom: 0.38rem;
+  color: #8d836f;
+  font-size: 0.52rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.shape-picker,
+.detail-picker {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.4rem;
+}
+
+.shape-picker button,
+.detail-picker button {
   border: 1px solid #554e41;
   padding: 0.62rem 0.3rem;
   color: #aaa08a;
@@ -1278,10 +1338,25 @@ button:disabled {
   letter-spacing: 0.07em;
 }
 
-.shape-picker button[aria-pressed="true"] {
+.shape-picker button[aria-pressed="true"],
+.detail-picker button[aria-pressed="true"] {
   border-color: var(--gold);
   color: var(--chalk);
   background: #30291d;
+}
+
+.object-color-picker {
+  min-height: 2rem;
+  flex-wrap: wrap;
+}
+
+.object-color-picker .color-swatch {
+  width: 1.45rem;
+  height: 1.45rem;
+}
+
+.detail-picker {
+  grid-template-columns: repeat(2, 1fr);
 }
 
 .tool-dock {
@@ -1529,23 +1604,51 @@ noscript {
   }
 
   .room-header {
-    grid-template-columns: 1fr auto;
+    grid-template-columns: auto minmax(0, 1fr) minmax(0, auto);
     padding: 0 0.65rem;
   }
 
   .room-readouts {
-    gap: 0.65rem;
+    min-width: 0;
+    justify-self: center;
+    gap: 0.45rem;
   }
 
-  .save-status,
-  .identity,
   .connection-status .status-lamp {
     display: none;
   }
 
   .connection-status,
   .presence-button {
-    font-size: 0.59rem;
+    flex: 0 0 auto;
+    font-size: 0.54rem;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+  }
+
+  .connection-status[data-state="full"] {
+    max-width: 5.3rem;
+    line-height: 1.05;
+    text-align: center;
+    white-space: normal;
+  }
+
+  .save-status {
+    display: inline;
+    min-width: 0;
+    max-width: 4rem;
+    overflow: hidden;
+    font-size: 0.5rem;
+    letter-spacing: 0.06em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .identity {
+    display: block;
+    max-width: 7.5rem;
+    font-size: 0.54rem;
+    letter-spacing: 0.07em;
   }
 
   .room-viewport {
@@ -1638,7 +1741,22 @@ noscript {
   }
 
   .room-readouts {
-    justify-self: end;
+    gap: 0.35rem;
+  }
+
+  .presence-button,
+  .connection-status {
+    font-size: 0.49rem;
+  }
+
+  .save-status {
+    max-width: 3.1rem;
+    font-size: 0.46rem;
+  }
+
+  .identity {
+    max-width: 5.2rem;
+    font-size: 0.48rem;
   }
 
   .note-composer form {
@@ -1656,6 +1774,14 @@ noscript {
   .character-count {
     right: 3.7rem;
     bottom: 1.05rem;
+  }
+
+  .object-builder {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .object-body-option {
+    grid-column: 1 / -1;
   }
 
   .shape-picker {
@@ -1733,6 +1859,20 @@ noscript {
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
+}
+
+.low-effects .window-glow,
+.low-effects .room-stage::after {
+  display: none;
+}
+
+.low-effects .occupancy-light,
+.low-effects .status-lamp,
+.low-effects .hanging-light,
+.low-effects .presence-cursor,
+.low-effects .artifact {
+  animation: none !important;
+  transition: none !important;
 }
 
 @media (prefers-contrast: more) {

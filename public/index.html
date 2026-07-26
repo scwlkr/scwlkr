@@ -94,8 +94,9 @@
               aria-label="Shared room surface. Choose a tool, then use the pointer. Keyboard users can use arrow keys and Enter to place things."
               tabindex="0"
             >
-              <g id="drawings-layer" aria-hidden="true"></g>
+              <g id="persistent-drawings-layer"></g>
               <g id="artifacts-layer"></g>
+              <g id="drawings-layer"></g>
               <g id="presence-layer" aria-hidden="true"></g>
               <path id="stroke-preview" class="stroke-preview" d="" aria-hidden="true"></path>
               <g id="placement-target" class="placement-target" transform="translate(500 320)" aria-hidden="true" hidden>
@@ -128,11 +129,35 @@
 
         <div class="composer object-composer" id="object-composer" hidden>
           <p class="composer-label">MAKE ONE SMALL THING</p>
-          <div class="shape-picker" role="group" aria-label="Object shape">
-            <button type="button" data-shape="crate" aria-pressed="true">CRATE</button>
-            <button type="button" data-shape="lamp" aria-pressed="false">LAMP</button>
-            <button type="button" data-shape="stool" aria-pressed="false">STOOL</button>
-            <button type="button" data-shape="plant" aria-pressed="false">PLANT</button>
+          <div class="object-builder">
+            <div class="object-option object-body-option">
+              <span class="object-option-label" id="object-body-label">BODY</span>
+              <div class="shape-picker" role="group" aria-labelledby="object-body-label">
+                <button type="button" data-shape="crate" aria-pressed="true">CRATE</button>
+                <button type="button" data-shape="lamp" aria-pressed="false">LAMP</button>
+                <button type="button" data-shape="stool" aria-pressed="false">STOOL</button>
+                <button type="button" data-shape="plant" aria-pressed="false">PLANT</button>
+              </div>
+            </div>
+            <div class="object-option">
+              <span class="object-option-label" id="object-color-label">COLOR</span>
+              <div class="color-picker object-color-picker" role="group" aria-labelledby="object-color-label">
+                <button class="color-swatch ink-chalk is-active" type="button" data-color="chalk" aria-label="Chalk object" aria-pressed="true"></button>
+                <button class="color-swatch ink-rust" type="button" data-color="rust" aria-label="Rust object" aria-pressed="false"></button>
+                <button class="color-swatch ink-moss" type="button" data-color="moss" aria-label="Moss object" aria-pressed="false"></button>
+                <button class="color-swatch ink-sky" type="button" data-color="sky" aria-label="Sky object" aria-pressed="false"></button>
+                <button class="color-swatch ink-gold" type="button" data-color="gold" aria-label="Gold object" aria-pressed="false"></button>
+              </div>
+            </div>
+            <div class="object-option">
+              <span class="object-option-label" id="object-detail-label">DETAIL</span>
+              <div class="detail-picker" role="group" aria-labelledby="object-detail-label">
+                <button type="button" data-detail="plain" aria-pressed="true">PLAIN</button>
+                <button type="button" data-detail="star" aria-pressed="false">STAR</button>
+                <button type="button" data-detail="stripe" aria-pressed="false">STRIPE</button>
+                <button type="button" data-detail="eye" aria-pressed="false">EYE</button>
+              </div>
+            </div>
           </div>
           <button class="composer-close" type="button" data-close-composer aria-label="Close object tool">×</button>
           <p id="object-allowance">ONE / DAY · CLICK TO PLACE</p>

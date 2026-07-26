@@ -31,20 +31,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium firefox webkit
 
-      - name: Typecheck
-        run: npm run typecheck
-
-      - name: Test domain and Worker runtime
-        run: npm test
-
-      - name: Build Worker and Static Assets
-        run: npm run build
-
-      - name: Test two-browser room contract
-        run: npm run test:e2e
+      - name: Run release gate
+        run: npm run release:check
 
       - name: Upload browser failure artifacts
         if: failure()

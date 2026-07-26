@@ -26,6 +26,7 @@ describe("room domain rules", () => {
 
   it("rejects malformed and oversized strokes", () => {
     expect(normalizeStroke([{ x: 1, y: 2 }])).toBeNull();
+    expect(normalizeStroke([{ x: 1, y: 2 }, { x: 1, y: 2 }])).toBeNull();
     expect(normalizeStroke(Array.from({ length: 81 }, () => ({ x: 1, y: 2 })))).toBeNull();
     expect(normalizeStroke([{ x: 1, y: 2 }, { x: 4, y: 6 }])).toHaveLength(2);
   });

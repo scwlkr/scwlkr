@@ -70,7 +70,12 @@ export function normalizeStroke(value: unknown): Point[] | null {
 
   const points = value.map(normalizePoint);
   if (points.some((point) => point === null)) return null;
-  return points as Point[];
+  const normalized = points as Point[];
+  const hasLength = normalized.some((point, index) => {
+    const previous = normalized[index - 1];
+    return previous ? Math.hypot(point.x - previous.x, point.y - previous.y) >= 0.5 : false;
+  });
+  return hasLength ? normalized : null;
 }
 
 export function strokeInkCost(points: Point[], width: number): number {

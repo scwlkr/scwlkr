@@ -5,14 +5,16 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev --local",
-    "typecheck": "tsc --noEmit && tsc -p tsconfig.e2e.json --noEmit && node --check public/app.js",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.e2e.json --noEmit && node --check public/app.js && node --check scripts/load-test.mjs && node --check scripts/verify-public.mjs",
     "test": "vitest run --max-workers=1 --no-isolate",
     "test:e2e": "playwright test",
     "build": "wrangler deploy --dry-run --outdir .wrangler/build",
     "check": "npm run typecheck && npm run test && npm run build",
-    "deploy:preview": "npm run check && wrangler deploy --config wrangler.preview.jsonc",
-    "deploy": "npm run check && wrangler deploy",
-    "load:test": "node scripts/load-test.mjs"
+    "release:check": "npm run check && npm run test:e2e",
+    "deploy:preview": "npm run release:check && wrangler deploy --config wrangler.preview.jsonc",
+    "deploy": "npm run release:check && wrangler deploy",
+    "load:test": "node scripts/load-test.mjs",
+    "verify:public": "node scripts/verify-public.mjs"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.18.8",
