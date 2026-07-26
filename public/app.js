@@ -1381,7 +1381,7 @@ function objectIsAvailable() {
 }
 
 function updateObjectAllowance() {
-  const toolButton = document.querySelector('[data-tool="object"]');
+  const toolButton = document.querySelector('.tool-button[data-tool="object"]');
   const available = objectIsAvailable();
   toolButton.disabled = !available;
   if (available) {
