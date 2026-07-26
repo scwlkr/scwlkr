@@ -1,0 +1,72 @@
+:root {
+  color: #e7dfcb;
+  background: #171512;
+  font-family: "Courier New", Courier, monospace;
+  font-synthesis: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  background:
+    radial-gradient(circle at 50% 30%, rgb(94 77 51 / 22%), transparent 38rem),
+    #171512;
+}
+
+button {
+  color: inherit;
+  font: inherit;
+}
+
+.entry {
+  min-height: 100vh;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 1.25rem;
+  padding: 2rem;
+  text-align: center;
+}
+
+.eyebrow,
+.product-line,
+.occupancy {
+  margin: 0;
+  color: #9a927f;
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(3.5rem, 14vw, 8rem);
+  letter-spacing: -0.08em;
+  line-height: 0.85;
+  text-shadow: 0.08em 0.08em 0 #28231d;
+}
+
+#enter {
+  min-width: 9rem;
+  border: 1px solid #8d826c;
+  padding: 0.85rem 1.5rem;
+  background: #211e19;
+  cursor: pointer;
+}
+
+#enter:hover,
+#enter:focus-visible {
+  border-color: #e7dfcb;
+  outline: 2px solid transparent;
+  transform: translateY(-1px);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  #enter {
+    transition: border-color 140ms ease, transform 140ms ease;
+  }
+}

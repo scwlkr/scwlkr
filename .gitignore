@@ -1,2 +1,9 @@
+node_modules/
+.wrangler/
+coverage/
+playwright-report/
+test-results/
+.env
+.env.*
+!.env.example
 .DS_Store
-
