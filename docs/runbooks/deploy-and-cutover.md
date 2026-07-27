@@ -83,7 +83,7 @@ npx wrangler secret list --config wrangler.jsonc
 BASE_URL=https://scwlkr-room.WORKERS_SUBDOMAIN.workers.dev npm run verify:public
 ```
 
-Confirm the secret list includes `MODERATOR_TOKEN` and the production Archive binding names `scwlkr-room-archive`. `verify:public` performs only GET/HEAD checks for HTTPS redirect, readiness, and static security headers.
+Confirm the secret list includes `MODERATOR_TOKEN` and the production Archive binding names `scwlkr-room-archive`. `verify:public` performs only GET/HEAD checks for readiness and static security headers. On `workers.dev` it verifies the Worker's routed `/api/readiness` HTTP fallback because Static Assets may serve `/` before the Worker; on `scwlkr.com` it requires the zone-level root HTTP redirect.
 
 Open the production `workers.dev` URL in a real owner-controlled browser, choose **ENTER**, confirm a generated identity, `CONNECTED`, and a sensible occupancy count, then close the tab. Do not draw, place a Note or Object, toggle the light, report, moderate, run the load test, or run remote Playwright against production. Production proof must not seed fake Artifacts.
 
