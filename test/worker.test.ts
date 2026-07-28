@@ -51,6 +51,30 @@ async function nextMessage(socket: WebSocket, expectedType: string): Promise<Rec
   });
 }
 
+async function collectCursorBatch(socket: WebSocket, expectedCount: number): Promise<Record<string, unknown>[]> {
+  return new Promise((resolve, reject) => {
+    const cursors = new Map<string, Record<string, unknown>>();
+    const timeout = setTimeout(() => {
+      socket.removeEventListener("message", listener);
+      reject(new Error(`Timed out waiting for ${expectedCount} cursors; received ${cursors.size}`));
+    }, 2_000);
+    const listener = (event: MessageEvent) => {
+      const value = JSON.parse(String(event.data)) as Record<string, unknown>;
+      if (value.type !== "presence.cursors" || !Array.isArray(value.cursors)) return;
+      for (const cursor of value.cursors) {
+        if (!cursor || typeof cursor !== "object") continue;
+        const record = cursor as Record<string, unknown>;
+        if (typeof record.presenceId === "string") cursors.set(record.presenceId, record);
+      }
+      if (cursors.size < expectedCount) return;
+      clearTimeout(timeout);
+      socket.removeEventListener("message", listener);
+      resolve(Array.from(cursors.values()));
+    };
+    socket.addEventListener("message", listener);
+  });
+}
+
 async function expectNoMessageMatching(
   socket: WebSocket,
   predicate: (message: Record<string, unknown>) => boolean,
@@ -636,15 +660,14 @@ describe("ROOM_1 Worker", () => {
       const observer = sockets.at(-1);
       if (!observer) throw new Error("Target-occupancy observer missing");
       for (let round = 0; round < 3; round += 1) {
-        const cursorFanout = nextMessage(observer, "presence.cursors");
+        const cursorFanout = collectCursorBatch(observer, 50);
         sockets.forEach((socket, index) => {
           socket.send(JSON.stringify({
             type: "cursor",
             payload: { point: { x: 20 + index, y: 120 + round * 10 } },
           }));
         });
-        const cursorBatch = await cursorFanout;
-        expect(cursorBatch.cursors).toHaveLength(50);
+        expect(await cursorFanout).toHaveLength(50);
       }
       const first = sockets[0];
       if (!first) throw new Error("Target-occupancy sender missing");
