@@ -73,6 +73,12 @@ The Playwright configuration refuses a remote run without the 1Password-provided
 
 Do not proceed if preview is unready or if any browser, persistence, moderation, or load check fails.
 
+## Automated Git deployment
+
+Both Workers are connected to `scwlkr/scwlkr` with Cloudflare Workers Builds. The production `scwlkr-room` connection watches only `master`, runs `npm run check`, and, only if that command succeeds, runs `npx wrangler deploy`. Its non-production builds are disabled. The `scwlkr-room-preview` connection runs the same build gate, deploys `master` with `npx wrangler deploy --config wrangler.preview.jsonc`, and uploads non-production branch versions with `npx wrangler versions upload --config wrangler.preview.jsonc`. Branch proof therefore stays on the preview Durable Object and Archive bucket. Both connections use repository root `/` and build caching.
+
+Cloudflare authenticates these builds with the dedicated `scwlkr build token`; do not reuse an unrelated project token or copy the token value into the repository. GitHub CI remains the full release gate and runs `npm run release:check` on pull requests and `master`. Merge to `master` only after that CI passes. The manual Wrangler commands below remain the recovery path if Workers Builds is unavailable.
+
 ## Deploy production to `workers.dev`
 
 ```sh

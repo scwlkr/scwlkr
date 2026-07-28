@@ -6,6 +6,8 @@
 
 Configure an external HTTPS monitor to request `https://scwlkr.com/api/readiness` every five minutes and require HTTP 200 with `ok: true`, `ready: true`, and `room: "ROOM_1"`. This verifies DNS, TLS, the Worker, the Durable Object, SQLite, and required bindings together. A static-homepage or `/api/health` check alone is insufficient.
 
+The public repository supplies that monitor in `.github/workflows/readiness.yml`. GitHub Actions runs it every five minutes and exposes failures through the Actions run and normal GitHub workflow notifications. Keep scheduled Actions enabled, manually dispatch it after a production deployment, and verify the latest run before closing an incident.
+
 Use Cloudflare Workers Observability for runtime exceptions. Reproduce visible save or mutation failures in an isolated browser while tailing current invocations with:
 
 ```sh
