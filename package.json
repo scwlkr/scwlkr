@@ -1,34 +1,30 @@
 {
-  "name": "scwlkr-room",
-  "version": "0.1.0",
+  "name": "scwlkr-site",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "wrangler dev --local",
-    "typecheck": "tsc --noEmit && tsc -p tsconfig.e2e.json --noEmit && node --check public/app.js && node --check scripts/load-test.mjs && node --check scripts/verify-public.mjs",
-    "test": "vitest run --max-workers=1 --no-isolate",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.e2e.json --noEmit && node --check public/app.js && node --check scripts/verify-site.mjs",
+    "test": "node scripts/verify-site.mjs && npm run test:e2e",
     "test:e2e": "playwright test",
     "build": "wrangler deploy --dry-run --outdir .wrangler/build",
-    "check": "npm run typecheck && npm run test && npm run build",
+    "check": "npm run typecheck && node scripts/verify-site.mjs && npm run build",
     "release:check": "npm run check && npm run test:e2e",
     "deploy:preview": "npm run release:check && wrangler deploy --config wrangler.preview.jsonc",
     "deploy": "npm run release:check && wrangler deploy",
-    "load:test": "node scripts/load-test.mjs",
-    "verify:public": "node scripts/verify-public.mjs"
+    "verify:public": "SITE_URL=https://scwlkr.com node scripts/verify-site.mjs"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.18.8",
-    "@cloudflare/workers-types": "5.20260726.1",
+    "@cloudflare/workers-types": "^5.20260819.1",
     "@playwright/test": "1.62.0",
     "@types/node": "^24.13.3",
     "typescript": "7.0.2",
-    "vitest": "4.1.10",
-    "wrangler": "4.114.0",
-    "ws": "8.21.1"
+    "wrangler": "^4.124.0"
   },
   "allowScripts": {
     "esbuild@0.28.1": true,
     "fsevents@2.3.2 || 2.3.3": true,
-    "workerd@1.20260722.1": true
+    "workerd@1.20260815.1": true
   }
 }
