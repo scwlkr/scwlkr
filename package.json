@@ -9,8 +9,8 @@
     "test": "node scripts/verify-site.mjs && npm run test:e2e",
     "test:e2e": "playwright test",
     "build": "wrangler deploy --dry-run --outdir .wrangler/build",
-    "check": "npm run typecheck && node scripts/verify-site.mjs && npm run build && npm run test:e2e",
-    "release:check": "npm run check",
+    "check": "npm run typecheck && node scripts/verify-site.mjs && npm run build",
+    "release:check": "npm run check && npm run test:e2e",
     "deploy:preview": "npm run release:check && wrangler deploy --config wrangler.preview.jsonc",
     "deploy": "npm run release:check && wrangler deploy",
     "verify:public": "SITE_URL=https://scwlkr.com node scripts/verify-site.mjs"
