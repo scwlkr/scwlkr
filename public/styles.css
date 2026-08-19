@@ -1,13 +1,14 @@
 :root {
-  --paper: #f7f8fc;
-  --paper-rgb: 247, 248, 252;
-  --ink: #11131a;
-  --ink-rgb: 17, 19, 26;
-  --field: #000088;
-  --electric: #3155ff;
-  --signal: #ff5a36;
-  --yellow: #f4d35e;
-  --muted: #687080;
+  --paper: #fff;
+  --paper-rgb: 255, 255, 255;
+  --ink: #181818;
+  --ink-rgb: 24, 24, 24;
+  --field: #181818;
+  --signal: #23ce6b;
+  --hero-ink: #fff;
+  --hero-ink-rgb: 255, 255, 255;
+  --hero-signal: #23ce6b;
+  --muted: #626262;
   --line: rgba(var(--ink-rgb), 0.2);
   --display: "Arial Black", "Helvetica Neue", Arial, sans-serif;
   --body: "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -17,23 +18,11 @@
   text-rendering: geometricPrecision;
 }
 
-html[data-palette="orange"] {
-  --field: #ff5a36;
-  --electric: #000088;
-  --signal: #3155ff;
-  --yellow: #f4d35e;
-}
-
-html[data-palette="night"] {
-  --paper: #11131a;
-  --paper-rgb: 17, 19, 26;
-  --ink: #f7f8fc;
-  --ink-rgb: 247, 248, 252;
-  --field: #3155ff;
-  --electric: #000088;
-  --signal: #ff7454;
-  --muted: #a6adbd;
-  color-scheme: dark;
+html[data-palette="green"] {
+  --field: #23ce6b;
+  --hero-ink: #181818;
+  --hero-ink-rgb: 24, 24, 24;
+  --hero-signal: #fff;
 }
 
 *,
@@ -108,8 +97,9 @@ button {
 }
 
 :focus-visible {
-  outline: 3px solid var(--signal);
+  outline: 3px solid var(--ink);
   outline-offset: 4px;
+  box-shadow: 0 0 0 6px var(--signal);
 }
 
 .site-shell {
@@ -128,8 +118,8 @@ button {
   align-items: center;
   min-height: 5rem;
   padding: 0 2rem;
-  color: #fff;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.32);
+  color: var(--hero-ink);
+  border-bottom: 1px solid rgba(var(--hero-ink-rgb), 0.32);
 }
 
 .wordmark {
@@ -137,21 +127,21 @@ button {
   place-items: center;
   width: 3rem;
   height: 3rem;
-  color: #fff;
-  font-family: var(--display);
-  font-size: 1.1rem;
-  line-height: 1;
+  color: var(--hero-ink);
   text-decoration: none;
-  border: 2px solid currentColor;
-  border-radius: 50%;
-  transform: rotate(-7deg);
-  transition: color 180ms ease, background 180ms ease, transform 180ms ease;
+  border: 1px solid rgba(var(--hero-ink-rgb), 0.5);
+  transition: border-color 180ms ease, transform 180ms ease;
+}
+
+.wordmark img {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .wordmark:hover {
-  background: #fff;
-  color: var(--field);
-  transform: rotate(7deg) scale(1.05);
+  border-color: var(--hero-signal);
+  transform: rotate(-4deg) scale(1.05);
 }
 
 .header-readout {
@@ -205,9 +195,9 @@ button {
   gap: 0.55rem;
   min-height: 2.5rem;
   padding: 0 0.85rem;
-  color: #fff;
+  color: var(--hero-ink);
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(var(--hero-ink-rgb), 0.6);
   cursor: pointer;
   font-family: var(--mono);
   font-size: 0.62rem;
@@ -215,15 +205,15 @@ button {
 }
 
 .signal-toggle:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(var(--hero-ink-rgb), 0.12);
 }
 
 .signal-toggle__lamp {
   width: 0.62rem;
   height: 0.62rem;
-  background: var(--signal);
+  background: var(--hero-signal);
   border-radius: 50%;
-  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.12);
+  box-shadow: 0 0 0 4px rgba(var(--hero-ink-rgb), 0.12);
   transition: background 350ms ease;
 }
 
@@ -237,7 +227,7 @@ button {
   overflow: hidden;
   isolation: isolate;
   background: var(--field);
-  color: #fff;
+  color: var(--hero-ink);
   transition: background-color 450ms ease;
 }
 
@@ -247,7 +237,7 @@ button {
   z-index: -2;
   inset: 0;
   background:
-    radial-gradient(circle at var(--pointer-px, 70%) var(--pointer-py, 20%), rgba(255, 255, 255, 0.2) 0, transparent 24rem),
+    radial-gradient(circle at var(--pointer-px, 70%) var(--pointer-py, 20%), rgba(var(--hero-ink-rgb), 0.2) 0, transparent 24rem),
     linear-gradient(118deg, transparent 0 54%, rgba(0, 0, 0, 0.13) 54% 54.2%, transparent 54.2%);
 }
 
@@ -257,8 +247,8 @@ button {
   inset: 0;
   opacity: 0.33;
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.18) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.18) 1px, transparent 1px);
+    linear-gradient(rgba(var(--hero-ink-rgb), 0.18) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(var(--hero-ink-rgb), 0.18) 1px, transparent 1px);
   background-size: clamp(2.5rem, 5vw, 5rem) clamp(2.5rem, 5vw, 5rem);
   mask-image: linear-gradient(to bottom, #000 0%, transparent 88%);
 }
@@ -279,7 +269,7 @@ button {
   width: 2.2rem;
   height: 0.6rem;
   margin-right: 0.7rem;
-  background: var(--signal);
+  background: var(--hero-signal);
   vertical-align: -0.08rem;
 }
 
@@ -324,8 +314,8 @@ button {
   }
 }
 
-.hero-name span:nth-child(3) {
-  color: var(--signal);
+.hero-name span:nth-child(4) {
+  color: var(--hero-signal);
 }
 
 .hero-statement {
@@ -347,7 +337,7 @@ button {
 .hero-statement p:last-child {
   justify-self: end;
   color: transparent;
-  -webkit-text-stroke: 1.5px #fff;
+  -webkit-text-stroke: 1.5px var(--hero-ink);
 }
 
 .hero-bottom {
@@ -358,7 +348,7 @@ button {
   gap: 3rem;
   margin-top: clamp(2rem, 4vh, 4rem);
   padding-top: 1.2rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.42);
+  border-top: 1px solid rgba(var(--hero-ink-rgb), 0.42);
 }
 
 .hero-intro {
@@ -392,7 +382,7 @@ button {
 }
 
 .down-link:hover svg {
-  background: #fff;
+  background: var(--hero-ink);
   color: var(--field);
   transform: translateY(0.3rem);
 }
