@@ -19,14 +19,6 @@
       "custom_domain": true
     }
   ],
-  // The unbound class declaration preserves dormant legacy storage until its
-  // irreversible deletion receives a separate, explicit approval.
-  "exports": {
-    "Room": {
-      "type": "durable-object",
-      "storage": "sqlite"
-    }
-  },
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1
