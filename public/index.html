@@ -1,225 +1,207 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-palette="blue">
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="color-scheme" content="dark">
-    <meta name="theme-color" content="#171512">
-    <meta name="description" content="One permanent room on the internet.">
-    <title>ROOM_1</title>
+    <meta name="theme-color" content="#f7f8fc">
+    <meta name="description" content="scwlkr builds apps, tools, games, languages, and systems that refuse to leave him alone.">
+    <meta property="og:title" content="scwlkr — independent builder">
+    <meta property="og:description" content="Apps. Tools. Games. Languages. Systems. An unreasonable number of rabbit holes.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://scwlkr.com">
+    <meta name="twitter:card" content="summary">
+    <title>scwlkr — I build whatever refuses to leave me alone.</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="/styles.css">
     <script type="module" src="/app.js"></script>
   </head>
   <body>
-    <main id="app">
-      <section class="entry-screen" id="entry-screen" aria-labelledby="entry-title">
-        <div class="entry-door" aria-hidden="true">
-          <span class="door-number">1</span>
-          <span class="door-knob"></span>
+    <a class="skip-link" href="#work">Skip to the work</a>
+
+    <div class="site-shell">
+      <header class="site-header">
+        <a class="wordmark" href="#top" aria-label="scwlkr, back to top">
+          <span aria-hidden="true">S/</span>
+        </a>
+
+        <div class="header-readout" aria-label="Location and local time">
+          <span>DALLAS, TX</span>
+          <time id="local-time" datetime="">--:--:--</time>
         </div>
-        <div class="entry-copy">
-          <p class="eyebrow">SCWLKR.COM</p>
-          <h1 id="entry-title">ROOM_1</h1>
-          <p class="entry-occupancy" aria-live="polite">
-            <span class="occupancy-light" aria-hidden="true"></span>
-            <span id="occupancy-entry">—</span> INSIDE
-          </p>
-          <button class="enter-button" id="enter" type="button">ENTER</button>
-          <p class="product-line">LEAVING PEOPLE TO THEIR OWN DEVICES.</p>
-          <p class="entry-error" id="entry-error" role="alert" hidden></p>
-        </div>
-      </section>
 
-      <section class="room-screen" id="room-screen" aria-label="ROOM_1 shared room" hidden>
-        <header class="room-header">
-          <div class="room-mark" aria-label="ROOM_1">
-            <span aria-hidden="true">01</span>
-            <strong>ROOM_1</strong>
+        <nav class="site-nav" aria-label="Primary navigation">
+          <a href="#work">Work</a>
+          <a href="#about">About</a>
+          <a href="https://github.com/scwlkr" target="_blank" rel="noreferrer">GitHub <span aria-hidden="true">↗</span></a>
+        </nav>
+
+        <button class="signal-toggle" id="signal-toggle" type="button" aria-label="Change the site color signal">
+          <span class="signal-toggle__lamp" aria-hidden="true"></span>
+          <span>SHIFT SIGNAL</span>
+        </button>
+      </header>
+
+      <main>
+        <section class="hero" id="top" aria-labelledby="hero-title">
+          <div class="hero-grid" aria-hidden="true"></div>
+          <p class="hero-kicker reveal">INDEPENDENT BUILDER / N00B UNTIL PROVEN GUILTY</p>
+
+          <h1 class="sr-only" id="hero-title">scwlkr</h1>
+          <div class="hero-name" id="hero-name" aria-hidden="true">
+            <span>S</span><span>C</span><span>W</span><span>L</span><span>K</span><span>R</span>
           </div>
 
-          <div class="room-readouts">
-            <button class="presence-button" id="people-toggle" type="button" aria-expanded="false" aria-controls="people-panel">
-              <span id="occupancy-room">0</span> INSIDE
-            </button>
-            <span class="connection-status" id="connection-status" data-state="connecting" role="status">
-              <span class="status-lamp" aria-hidden="true"></span>
-              <span id="connection-label">CONNECTING</span>
-            </span>
-            <span class="save-status" id="save-status" aria-live="polite">QUIET</span>
+          <div class="hero-statement reveal">
+            <p>I build whatever</p>
+            <p>refuses to leave me alone.</p>
           </div>
 
-          <p class="identity" id="identity">ANONYMOUS</p>
-        </header>
-
-        <aside class="people-panel" id="people-panel" aria-label="People inside" hidden>
-          <div class="panel-heading">
-            <strong>IN THE ROOM</strong>
-            <button class="icon-button" id="people-close" type="button" aria-label="Close people panel">×</button>
+          <div class="hero-bottom reveal">
+            <p class="hero-intro">
+              Apps, tools, games, languages, and systems. Some useful.
+              Some unreasonably committed to the bit.
+            </p>
+            <a class="down-link" href="#work">
+              <span>See the evidence</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v17M5 13l7 7 7-7"/></svg>
+            </a>
           </div>
-          <ul id="people-list"></ul>
-        </aside>
 
-        <div class="room-viewport">
-          <div class="room-stage" id="room-stage">
-            <div class="room-background" aria-hidden="true">
-              <div class="wall-noise"></div>
-              <div class="ceiling-wire"></div>
-              <div class="hanging-light"><span></span></div>
-              <div class="window">
-                <i></i><i></i><i></i><i></i>
-                <span class="window-glow"></span>
+          <div class="cursor-readout" aria-hidden="true">
+            <span>X <b id="pointer-x">000</b></span>
+            <span>Y <b id="pointer-y">000</b></span>
+          </div>
+        </section>
+
+        <section class="work" id="work" aria-labelledby="work-title">
+          <div class="section-heading reveal">
+            <p class="section-label">SELECTED EVIDENCE</p>
+            <h2 id="work-title">No niche.<br>Just momentum.</h2>
+            <p>Things I cared enough about to make real.</p>
+          </div>
+
+          <div class="project-list">
+            <a class="project project--openjob reveal" href="https://github.com/scwlkr/openjob" target="_blank" rel="noreferrer" data-project>
+              <div class="project-copy">
+                <p class="project-kind">WEB · NATIVE · TERMINAL</p>
+                <h3>OpenJob</h3>
+                <p>One clear shared task list, everywhere the work happens.</p>
+                <span class="project-link">Open source <b aria-hidden="true">↗</b></span>
               </div>
-              <div class="wall-crack crack-one"></div>
-              <div class="wall-crack crack-two"></div>
-              <div class="old-print"><span>STAY<br>AWAKE</span></div>
-              <div class="socket"></div>
-              <div class="baseboard"></div>
-              <div class="floorboards"></div>
-              <div class="rug"></div>
-              <div class="radiator"><i></i><i></i><i></i><i></i><i></i></div>
-              <div class="dust dust-one"></div>
-              <div class="dust dust-two"></div>
-            </div>
-
-            <button class="light-switch" id="light-switch" type="button" aria-pressed="true" aria-label="Turn the shared light off">
-              <span aria-hidden="true"></span>
-            </button>
-
-            <svg
-              class="room-canvas"
-              id="room-canvas"
-              viewBox="0 0 1000 640"
-              preserveAspectRatio="none"
-              role="application"
-              aria-label="Shared room surface. Choose a tool, then use the pointer. Keyboard users can use arrow keys and Enter to place things."
-              tabindex="0"
-            >
-              <g id="persistent-drawings-layer"></g>
-              <g id="artifacts-layer"></g>
-              <g id="drawings-layer"></g>
-              <g id="presence-layer" aria-hidden="true"></g>
-              <path id="stroke-preview" class="stroke-preview" d="" aria-hidden="true"></path>
-              <g id="placement-target" class="placement-target" transform="translate(500 320)" aria-hidden="true" hidden>
-                <circle r="18"></circle>
-                <path d="M-28 0H28M0-28V28"></path>
-              </g>
-            </svg>
-
-            <div class="selected-actions" id="selected-actions" hidden>
-              <span id="selected-kind">OBJECT</span>
-              <button id="rotate-artifact" type="button">TURN</button>
-              <button id="report-artifact" type="button">REPORT</button>
-              <button id="deselect-artifact" type="button" aria-label="Deselect artifact">×</button>
-            </div>
-
-            <p class="room-message" id="room-message" role="status" aria-live="polite" hidden></p>
-          </div>
-        </div>
-
-        <div class="composer note-composer" id="note-composer" hidden>
-          <form id="note-form">
-            <label for="note-text">LEAVE A NOTE</label>
-            <textarea id="note-text" maxlength="140" rows="2" placeholder="SAY LESS." required></textarea>
-            <span class="character-count"><span id="note-count">0</span>/140</span>
-            <button type="submit">DROP HERE</button>
-            <button class="composer-close" type="button" data-close-composer aria-label="Close note tool">×</button>
-          </form>
-          <p>CLICK TO PLACE · ARROWS MOVE THE MARK · ENTER DROPS IT</p>
-        </div>
-
-        <div class="composer object-composer" id="object-composer" hidden>
-          <p class="composer-label">MAKE ONE SMALL THING</p>
-          <div class="object-builder">
-            <div class="object-option object-body-option">
-              <span class="object-option-label" id="object-body-label">BODY</span>
-              <div class="shape-picker" role="group" aria-labelledby="object-body-label">
-                <button type="button" data-shape="crate" aria-pressed="true">CRATE</button>
-                <button type="button" data-shape="lamp" aria-pressed="false">LAMP</button>
-                <button type="button" data-shape="stool" aria-pressed="false">STOOL</button>
-                <button type="button" data-shape="plant" aria-pressed="false">PLANT</button>
+              <div class="project-art project-art--tasks" aria-hidden="true">
+                <span class="task-card task-card--one"><i></i>Ship the thing</span>
+                <span class="task-card task-card--two"><i></i>Break the thing</span>
+                <span class="task-card task-card--three"><i></i>Ship it better</span>
+                <span class="project-stamp">ONE LIST<br>NO FOG</span>
               </div>
-            </div>
-            <div class="object-option">
-              <span class="object-option-label" id="object-color-label">COLOR</span>
-              <div class="color-picker object-color-picker" role="group" aria-labelledby="object-color-label">
-                <button class="color-swatch ink-chalk is-active" type="button" data-color="chalk" aria-label="Chalk object" aria-pressed="true"></button>
-                <button class="color-swatch ink-rust" type="button" data-color="rust" aria-label="Rust object" aria-pressed="false"></button>
-                <button class="color-swatch ink-moss" type="button" data-color="moss" aria-label="Moss object" aria-pressed="false"></button>
-                <button class="color-swatch ink-sky" type="button" data-color="sky" aria-label="Sky object" aria-pressed="false"></button>
-                <button class="color-swatch ink-gold" type="button" data-color="gold" aria-label="Gold object" aria-pressed="false"></button>
+            </a>
+
+            <a class="project project--walklang reveal" href="https://github.com/scwlkr/WalkLang" target="_blank" rel="noreferrer" data-project>
+              <div class="project-copy">
+                <p class="project-kind">PROGRAMMING LANGUAGE · C++ → C</p>
+                <h3>WalkLang</h3>
+                <p>A small compiled language with syntax that reads like it means it.</p>
+                <span class="project-link">Read the source <b aria-hidden="true">↗</b></span>
               </div>
-            </div>
-            <div class="object-option">
-              <span class="object-option-label" id="object-detail-label">DETAIL</span>
-              <div class="detail-picker" role="group" aria-labelledby="object-detail-label">
-                <button type="button" data-detail="plain" aria-pressed="true">PLAIN</button>
-                <button type="button" data-detail="star" aria-pressed="false">STAR</button>
-                <button type="button" data-detail="stripe" aria-pressed="false">STRIPE</button>
-                <button type="button" data-detail="eye" aria-pressed="false">EYE</button>
+              <div class="project-art project-art--code" aria-hidden="true">
+                <span class="code-gutter">01<br>02<br>03<br>04</span>
+                <code><b>func:</b> make(idea)<br>&nbsp;&nbsp;<b>while:</b> idea.is_loud<br>&nbsp;&nbsp;&nbsp;&nbsp;build: idea<br><em>out: "real"</em></code>
+                <span class="compiled-pill">COMPILED ✓</span>
               </div>
+            </a>
+
+            <a class="project project--localhub reveal" href="https://github.com/scwlkr/LocalHub" target="_blank" rel="noreferrer" data-project>
+              <div class="project-copy">
+                <p class="project-kind">LOCAL AI · TERMINAL</p>
+                <h3>LocalHub</h3>
+                <p>A tiny terminal bridge between Codex and the models living on your own machine.</p>
+                <span class="project-link">Inspect the machine <b aria-hidden="true">↗</b></span>
+              </div>
+              <div class="project-art project-art--terminal" aria-hidden="true">
+                <div class="terminal-top"><i></i><i></i><i></i><span>lh / local</span></div>
+                <code><b>$</b> lh<br><span>✓ model found</span><br><span>✓ context loaded</span><br><em>handoff → codex_</em></code>
+                <div class="terminal-pulse"></div>
+              </div>
+            </a>
+
+            <a class="project project--uqiq reveal" href="https://github.com/scwlkr/UQIQ" target="_blank" rel="noreferrer" data-project>
+              <div class="project-copy">
+                <p class="project-kind">MOBILE GAME · GODOT</p>
+                <h3>UQIQ</h3>
+                <p>A fake-IQ puzzle game that makes you feel smart, dumb, and determined.</p>
+                <span class="project-link">Get judged <b aria-hidden="true">↗</b></span>
+              </div>
+              <div class="project-art project-art--iq" aria-hidden="true">
+                <span class="iq-orbit"></span>
+                <span class="iq-shape iq-shape--circle">?</span>
+                <span class="iq-shape iq-shape--square">!</span>
+                <span class="iq-shape iq-shape--triangle">△</span>
+                <span class="iq-caption">THIS IS NOT<br>AN IQ TEST</span>
+              </div>
+            </a>
+
+            <a class="project project--vampyre reveal" href="https://github.com/scwlkr/Vampyre" target="_blank" rel="noreferrer" data-project>
+              <div class="project-copy">
+                <p class="project-kind">AGENTS · GITHUB · CODEX</p>
+                <h3>Vampyre</h3>
+                <p>An autonomous software factory with GitHub as the queue and a human at the merge gate.</p>
+                <span class="project-link">Enter the factory <b aria-hidden="true">↗</b></span>
+              </div>
+              <div class="project-art project-art--factory" aria-hidden="true">
+                <span class="factory-node">ISSUE</span>
+                <i class="factory-line factory-line--one"></i>
+                <span class="factory-node factory-node--worker">AGENT</span>
+                <i class="factory-line factory-line--two"></i>
+                <span class="factory-node factory-node--merge">MERGE?</span>
+                <span class="factory-human">HUMAN GATE</span>
+              </div>
+            </a>
+
+            <a class="project project--palette reveal" href="https://github.com/scwlkr/paletteWOW" target="_blank" rel="noreferrer" data-project>
+              <div class="project-copy">
+                <p class="project-kind">COLOR TOOL · OPEN SOURCE</p>
+                <h3>paletteWOW</h3>
+                <p>A fast color palette generator with no ads, no ceremony, and no patience for beige.</p>
+                <span class="project-link">Make colors <b aria-hidden="true">↗</b></span>
+              </div>
+              <div class="project-art project-art--palette" aria-hidden="true">
+                <i style="--swatch:#000088"></i>
+                <i style="--swatch:#3155ff"></i>
+                <i style="--swatch:#ff5a36"></i>
+                <i style="--swatch:#f4d35e"></i>
+                <i style="--swatch:#f7f8fc"></i>
+                <span># DO WHATEVER</span>
+              </div>
+            </a>
+          </div>
+        </section>
+
+        <section class="about" id="about" aria-labelledby="about-title">
+          <div class="about-rule reveal" aria-hidden="true"><span></span><b>32.7767° N / 96.7970° W</b></div>
+          <div class="about-grid">
+            <p class="section-label reveal">ABOUT THE OPERATOR</p>
+            <h2 id="about-title" class="reveal">Curiosity with<br>a build command.</h2>
+            <div class="about-copy reveal">
+              <p>I’m scwlkr, an independent builder in Dallas.</p>
+              <p>I like taking ideas all the way out: product, code, interface, deployment, and the weird little detail nobody asked for.</p>
+              <p>Most of this started with “I wonder if…” and got out of hand.</p>
             </div>
+            <a class="github-cta reveal" href="https://github.com/scwlkr?tab=repositories" target="_blank" rel="noreferrer">
+              <span>See every rabbit hole</span>
+              <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M10 38 38 10M16 10h22v22"/></svg>
+            </a>
           </div>
-          <button class="composer-close" type="button" data-close-composer aria-label="Close object tool">×</button>
-          <p id="object-allowance">ONE / DAY · CLICK TO PLACE</p>
-        </div>
+        </section>
+      </main>
 
-        <footer class="tool-dock" aria-label="Room tools">
-          <div class="tool-picker" role="toolbar" aria-label="Tool">
-            <button class="tool-button is-active" type="button" data-tool="move" aria-pressed="true">
-              <span aria-hidden="true">✥</span> MOVE
-            </button>
-            <button class="tool-button" type="button" data-tool="draw" aria-pressed="false">
-              <span aria-hidden="true">╱</span> DRAW
-            </button>
-            <button class="tool-button" type="button" data-tool="note" aria-pressed="false">
-              <span aria-hidden="true">□</span> NOTE
-            </button>
-            <button class="tool-button" type="button" data-tool="object" aria-pressed="false">
-              <span aria-hidden="true">◇</span> OBJECT
-            </button>
-          </div>
+      <footer class="site-footer">
+        <p>© <span id="year">2026</span> SCWLKR</p>
+        <p>N00B UNTIL PROVEN GUILTY.</p>
+        <a href="#top">BACK TO TOP ↑</a>
+      </footer>
+    </div>
 
-          <div class="tool-options" id="draw-options" aria-label="Drawing options" hidden>
-            <div class="color-picker" role="group" aria-label="Ink color">
-              <button class="color-swatch ink-chalk is-active" type="button" data-color="chalk" aria-label="Chalk ink" aria-pressed="true"></button>
-              <button class="color-swatch ink-rust" type="button" data-color="rust" aria-label="Rust ink" aria-pressed="false"></button>
-              <button class="color-swatch ink-moss" type="button" data-color="moss" aria-label="Moss ink" aria-pressed="false"></button>
-              <button class="color-swatch ink-sky" type="button" data-color="sky" aria-label="Sky ink" aria-pressed="false"></button>
-              <button class="color-swatch ink-gold" type="button" data-color="gold" aria-label="Gold ink" aria-pressed="false"></button>
-            </div>
-            <div class="width-picker" role="group" aria-label="Brush width">
-              <button type="button" data-width="3" aria-label="Thin brush" aria-pressed="true"><i class="width-thin"></i></button>
-              <button type="button" data-width="6" aria-label="Medium brush" aria-pressed="false"><i class="width-medium"></i></button>
-              <button type="button" data-width="10" aria-label="Thick brush" aria-pressed="false"><i class="width-thick"></i></button>
-            </div>
-          </div>
-
-          <div class="ink-meter" id="ink-meter" aria-label="Ink remaining">
-            <span>INK</span>
-            <meter id="ink" min="0" max="1200" value="1200">1200</meter>
-          </div>
-        </footer>
-      </section>
-    </main>
-
-    <dialog class="report-dialog" id="report-dialog" aria-labelledby="report-title">
-      <form id="report-form" method="dialog">
-        <p class="eyebrow">KEEP IT QUIET</p>
-        <h2 id="report-title">REPORT THIS THING?</h2>
-        <label for="report-reason">Reason</label>
-        <select id="report-reason">
-          <option value="abusive">ABUSIVE</option>
-          <option value="personal information">PERSONAL INFORMATION</option>
-          <option value="spam">SPAM</option>
-          <option value="other">OTHER</option>
-        </select>
-        <div class="dialog-actions">
-          <button type="button" id="report-cancel">NEVER MIND</button>
-          <button type="submit" value="report">REPORT</button>
-        </div>
-      </form>
-    </dialog>
-
-    <noscript>THIS ROOM NEEDS JAVASCRIPT.</noscript>
+    <div class="palette-status sr-only" id="palette-status" aria-live="polite"></div>
+    <noscript><p class="noscript">Still works without JavaScript. It just sits still.</p></noscript>
   </body>
 </html>

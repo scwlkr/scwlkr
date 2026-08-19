@@ -1,5 +1,6 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
+  // Existing Worker name retained so the verified custom-domain route stays atomic.
   "name": "scwlkr-room",
   "main": "src/worker.ts",
   "compatibility_date": "2026-07-26",
@@ -8,8 +9,7 @@
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
-    "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api/*", "/ws"]
+    "not_found_handling": "single-page-application"
   },
   "routes": [
     {
@@ -17,52 +17,14 @@
       "custom_domain": true
     }
   ],
-  "durable_objects": {
-    "bindings": [
-      {
-        "name": "ROOM",
-        "class_name": "Room"
-      }
-    ]
+  // The unbound class declaration preserves dormant legacy storage until its
+  // irreversible deletion receives a separate, explicit approval.
+  "exports": {
+    "Room": {
+      "type": "durable-object",
+      "storage": "sqlite"
+    }
   },
-  "migrations": [
-    {
-      "tag": "v1",
-      "new_sqlite_classes": ["Room"]
-    }
-  ],
-  "r2_buckets": [
-    {
-      "binding": "ARCHIVE",
-      "bucket_name": "scwlkr-room-archive"
-    }
-  ],
-  "ratelimits": [
-    {
-      "name": "SESSION_RATE_LIMITER",
-      "namespace_id": "2026072601",
-      "simple": {
-        "limit": 60,
-        "period": 60
-      }
-    },
-    {
-      "name": "WS_RATE_LIMITER",
-      "namespace_id": "2026072602",
-      "simple": {
-        "limit": 120,
-        "period": 60
-      }
-    },
-    {
-      "name": "READ_RATE_LIMITER",
-      "namespace_id": "2026072605",
-      "simple": {
-        "limit": 60,
-        "period": 60
-      }
-    }
-  ],
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1
