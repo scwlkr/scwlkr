@@ -7,12 +7,14 @@ const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "..");
 const publicDir = resolve(root, "public");
 
-const [html, css, javascript, headers, readme] = await Promise.all([
+const [html, css, javascript, headers, readme, favicon, manifest] = await Promise.all([
   readFile(resolve(publicDir, "index.html"), "utf8"),
   readFile(resolve(publicDir, "styles.css"), "utf8"),
   readFile(resolve(publicDir, "app.js"), "utf8"),
   readFile(resolve(publicDir, "_headers"), "utf8"),
   readFile(resolve(root, "README.md"), "utf8"),
+  readFile(resolve(publicDir, "favicon.svg"), "utf8"),
+  readFile(resolve(publicDir, "site.webmanifest"), "utf8"),
 ]);
 
 for (const expected of [
@@ -36,6 +38,11 @@ assert.match(css, /:focus-visible/, "keyboard focus styles must exist");
 assert.match(javascript, /America\/Chicago/, "Dallas clock must use the correct time zone");
 assert.match(headers, /Content-Security-Policy:/, "security headers must include CSP");
 assert.match(readme, /https:\/\/scwlkr\.com/, "profile README must link to the site");
+assert.match(css, /--signal:\s*#23ce6b/i, "site signal must use the canonical scwlkr green");
+assert.match(css, /--field:\s*#181818/i, "site field must use the canonical scwlkr charcoal");
+assert.match(favicon, /#181818/i, "favicon must use the canonical scwlkr charcoal");
+assert.match(favicon, /aria-label="scwlkr raccoon"/i, "favicon must identify the scwlkr brandmark");
+assert.match(manifest, /"theme_color":\s*"#181818"/i, "manifest must use the canonical theme color");
 
 for (const publicCopy of [html, css, javascript, readme]) {
   assert.doesNotMatch(publicCopy, /ROOM_1|One-Room Internet/i, "retired product copy must not remain public");

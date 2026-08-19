@@ -13,9 +13,8 @@ const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 const finePointer = window.matchMedia("(pointer: fine)");
 
 const palettes = [
-  { name: "blue", label: "Blueprint signal", theme: "#f7f8fc" },
-  { name: "orange", label: "Flare signal", theme: "#f7f8fc" },
-  { name: "night", label: "Night signal", theme: "#11131a" },
+  { name: "brand", label: "Charcoal signal", theme: "#181818" },
+  { name: "green", label: "Green signal", theme: "#23ce6b" },
 ];
 
 let pointerFrame = 0;

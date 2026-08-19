@@ -27,8 +27,21 @@ test("color signal is interactive and keyboard accessible", async ({ page }) => 
   await expect(toggle).toBeFocused();
   await page.keyboard.press("Enter");
 
-  await expect(page.locator("html")).toHaveAttribute("data-palette", "orange");
-  await expect(page.locator("#palette-status")).toHaveText("Flare signal active.");
+  await expect(page.locator("html")).toHaveAttribute("data-palette", "green");
+  await expect(page.locator("#palette-status")).toHaveText("Green signal active.");
+});
+
+test("publishes the complete scwlkr favicon package", async ({ page, request }) => {
+  await page.goto("/");
+
+  await expect(page.locator('link[rel="icon"][type="image/svg+xml"]')).toHaveAttribute("href", "/favicon.svg");
+  await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute("href", "/apple-touch-icon.png");
+  await expect(page.locator('link[rel="manifest"]')).toHaveAttribute("href", "/site.webmanifest");
+
+  for (const asset of ["/favicon.svg", "/favicon.ico", "/apple-touch-icon.png", "/icon-192.png", "/icon-512.png", "/site.webmanifest"]) {
+    const response = await request.get(asset);
+    expect(response.ok(), asset).toBeTruthy();
+  }
 });
 
 test("layout stays inside the viewport", async ({ page }) => {
