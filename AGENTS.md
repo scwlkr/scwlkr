@@ -11,3 +11,7 @@ Use the canonical triage labels for issue state. See `docs/agents/triage-labels.
 ## Domain docs
 
 This is a single-context project. See `docs/agents/domain.md`.
+
+## Cloud Agent smoke
+
+- Cloud Agents can clone this repo and open PRs when the Cursor GitHub App is connected.
