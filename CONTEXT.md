@@ -16,9 +16,17 @@ There is no interface. The screen holds one thing at a time, made of dust: the s
 - the pointer pushes the dust around and the whole sculpture leans toward it;
 - press and hold pulls the dust into the pointer, release throws it back out;
 - typing anywhere spells the letters in dust, a matching destination ghosts in, and Enter goes there;
-- a word that is a destination is itself the link.
+- a word that is a destination is itself the link;
+- on a phone, a sideways drag runs the alphabet under the finger and letting go keeps the letter; a tap is Enter.
 
-Left alone, the page plays itself through the views.
+Left alone, the page plays itself through the views. Left alone for a minute and a half, whatever is on screen crumbles into a pile of sand until it is touched.
+
+Hidden extras, none of them announced anywhere on the page:
+
+- `scwlkr.com/#anything` opens spelling that word as a greeting (underscores are spaces; a hashed blocklist drops the worst words);
+- typing `time` shows a live clock in dust, `sand` collapses the screen on demand;
+- the raccoon's eyes follow the pointer, it blinks, and clicking its nose makes it sneeze;
+- typing anything else and pressing Enter asks a small language model running in the visitor's own browser for a one-sentence reply (`public/mind.js`, loaded only then; where no model can run, nothing happens).
 
 ## Voice
 

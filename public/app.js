@@ -158,13 +158,13 @@ function hash(value) {
 }
 
 // What a shared link is allowed to spell: short, printable, and not on the blocked list.
-function speakable(raw) {
+function speakable(raw, limit = 28) {
   const text = raw
     .replace(/[_+]+/g, " ")
     .replace(/[^\p{L}\p{N}\p{P}\p{S}\p{Zs}]/gu, "")
     .replace(/\s+/g, " ")
     .trim()
-    .slice(0, 28)
+    .slice(0, limit)
     .trim();
   const flat = text.toLowerCase().replace(/[013457@$!]/g, (character) => LEET[character]);
   for (const word of flat.split(/[^a-z]+/)) {
@@ -316,7 +316,7 @@ function live() {
   }
 
   // `lit` characters are solid; the rest is the ghost of a suggestion.
-  function text(value, lit = Infinity, inked = false) {
+  function text(value, lit = Infinity, inked = false, hot = false) {
     spaced(pen, 100);
     const unit = pen.measureText(value).width || 1;
     const size = typeSize(unit);
@@ -326,7 +326,7 @@ function live() {
     const baseline = size * 1.15;
     const shape = raster(advance + pad * 2, size * 1.6, (c) => {
       spaced(c, size);
-      c.fillStyle = "#ff0";
+      c.fillStyle = hot ? "rgb(35,206,107)" : "#ff0";
       c.fillText(value, pad, baseline);
       c.save();
       c.beginPath();
@@ -344,10 +344,34 @@ function live() {
     return shape;
   }
 
+  // A sentence wraps onto a few lines and is centred as a block.
+  function sentence(value) {
+    const rows = value.length <= 16 ? 1 : value.length <= 40 ? 2 : value.length <= 72 ? 3 : 4;
+    const width = Math.ceil(value.length / rows) + 3;
+    const wrapped = [""];
+    for (const word of value.split(" ")) {
+      const line = wrapped[wrapped.length - 1];
+      if (line && `${line} ${word}`.length > width && wrapped.length < 5) wrapped.push(word);
+      else wrapped[wrapped.length - 1] = line ? `${line} ${word}` : word;
+    }
+    spaced(pen, 100);
+    const unit = Math.max(...wrapped.map((line) => pen.measureText(line).width)) || 1;
+    const size = Math.min(typeSize(unit), (vh * 0.6) / (wrapped.length * 1.08));
+    const leading = size * 1.08;
+    const wide = (unit * size) / 100 + size * 0.6;
+    return raster(wide, leading * wrapped.length + size * 0.5, (c) => {
+      spaced(c, size);
+      c.textAlign = "center";
+      c.fillStyle = "#fff";
+      wrapped.forEach((line, i) => c.fillText(line, wide / 2, size + i * leading));
+    });
+  }
+
   function build(spec) {
     if (spec.shape === "wordmark") return wordmark();
     if (spec.shape === "mark") return mark();
-    return text(spec.text, spec.lit, spec.inked);
+    if (spec.shape === "sentence") return sentence(spec.text);
+    return text(spec.text, spec.lit, spec.inked, spec.hot);
   }
 
   // ---- GPU: positions and velocities live on the card, stepped by transform feedback ----
@@ -774,6 +798,84 @@ function live() {
     queryTimer = window.setTimeout(clearQuery, 6000);
   }
 
+  // Enter, or a tap on a phone: go where the word points, or ask the page what it thinks.
+  let thinking = false;
+  let asking = 0;
+
+  function submit() {
+    const asked = query.trim();
+    const hit = suggest(query);
+    if (hit && hit.view !== undefined) {
+      touched();
+      go(hit.view, true);
+    } else if (hit && hit.run) {
+      touched();
+      clearQuery(false);
+      hit.run();
+    } else if (!hit && asked.length > 1) {
+      answer(asked);
+    }
+  }
+
+  // The reply comes from a model running in the visitor's own browser, when one is available.
+  function answer(asked) {
+    touched();
+    asking += 1;
+    const ticket = asking;
+    thinking = true;
+    window.clearTimeout(queryTimer);
+    queryTimer = window.setTimeout(clearQuery, 24000);
+    import("./mind.js")
+      .then((mind) => mind.reply(asked))
+      .catch(() => null)
+      .then((line) => {
+        if (ticket !== asking) return;
+        thinking = false;
+        if (query.trim() !== asked) return;
+        const said = line ? speakable(String(line), 110) : "";
+        if (!said) {
+          window.clearTimeout(queryTimer);
+          queryTimer = window.setTimeout(clearQuery, 1800);
+          return;
+        }
+        clearQuery(false);
+        show({ shape: "sentence", text: said, mode: "say" }, { stagger: 0.5, turb: 0.9 });
+        root.dataset.say = said;
+        sayTimer = window.setTimeout(() => {
+          if (mode === "say") home();
+        }, 7500);
+      });
+  }
+
+  // Phones have no keys: drag sideways and the alphabet runs under the finger; let go to keep the letter.
+  const KEYS = ["<", ..."abcdefghijklmnopqrstuvwxyz", " "];
+  let scrub = null;
+
+  function pick(x) {
+    const key = KEYS[clamp(Math.floor(((x / vw - 0.06) / 0.88) * KEYS.length), 0, KEYS.length - 1)];
+    if (key === scrub) return;
+    scrub = key;
+    window.clearTimeout(queryTimer);
+    if (key === "<" && !query) return;
+    root.classList.add("typing");
+    const preview = key === "<" ? query : `${query}${key === " " ? "_" : key}`;
+    const lit = key === "<" ? query.length - 1 : query.length;
+    show({ shape: "text", text: preview, lit, hot: true }, { stagger: 0.04, turb: 0.1 });
+  }
+
+  function keep() {
+    if (scrub === "<") query = query.slice(0, -1);
+    else if (scrub !== null && query.length < 28) query += scrub;
+    scrub = null;
+    if (query.trim()) {
+      type();
+      return;
+    }
+    query = "";
+    root.classList.remove("typing");
+    home();
+  }
+
   // ---- input ----
 
   const ptr = { sx: 0, sy: 0, x: 0, y: 0, px: 0, py: 0, vx: 0, vy: 0, on: 0, want: 0, fresh: true };
@@ -827,8 +929,16 @@ function live() {
     point(event);
     if (event.pointerType === "mouse" && !root.classList.contains("fine")) root.classList.add("fine");
     if (press && !held && Math.hypot(event.clientX - press.x, event.clientY - press.y) > 12) {
+      if (press.touch && !press.moved) {
+        window.clearTimeout(holdTimer);
+        press.scrub = Math.abs(event.clientX - press.x) > Math.abs(event.clientY - press.y) * 1.3;
+        if (press.scrub) touched();
+      }
       press.moved = true;
-      if (event.pointerType !== "mouse") window.clearTimeout(holdTimer);
+    }
+    if (press && press.scrub) {
+      ptr.want = 0;
+      pick(event.clientX);
     }
     nextAt = Math.max(nextAt, performance.now() + 3500);
     wake();
@@ -856,6 +966,12 @@ function live() {
       burst = 1;
       root.classList.remove("hold");
     }
+    if (press && press.scrub) {
+      press.scrub = false;
+      ptr.want = 0;
+      keep();
+      return;
+    }
     if (press && press.touch) {
       const dx = event.clientX - press.x;
       const dy = event.clientY - press.y;
@@ -877,7 +993,8 @@ function live() {
   canvas.addEventListener("click", (event) => {
     if (held || (press && press.moved)) return;
     if (query) {
-      clearQuery();
+      if (press && press.touch) submit();
+      else clearQuery();
       return;
     }
     if (mode === "clock") {
@@ -962,15 +1079,7 @@ function live() {
     }
     if (key === "Enter") {
       if (query) {
-        const hit = suggest(query);
-        if (hit && hit.view !== undefined) {
-          touched();
-          go(hit.view, true);
-        } else if (hit && hit.run) {
-          touched();
-          clearQuery(false);
-          hit.run();
-        }
+        submit();
         return;
       }
       if (!mode && !links.includes(document.activeElement) && VIEWS[index].link) VIEWS[index].link.click();
@@ -1061,6 +1170,7 @@ function live() {
 
     since += dt;
     turb *= Math.exp(-dt * 1.5);
+    if (thinking) turb = Math.max(turb, 0.32);
     ptr.on += (ptr.want - ptr.on) * Math.min(1, dt * 9);
 
     // A sneeze is a short breath in at the nose, then everything goes.

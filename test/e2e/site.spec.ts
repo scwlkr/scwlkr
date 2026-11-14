@@ -143,3 +143,46 @@ test("keyboard focus brings its destination on stage", async ({ page }) => {
   const box = await x.boundingBox();
   expect(box && box.width > 40 && box.height > 40, "the focused link covers the word on screen").toBeTruthy();
 });
+
+test("a link can carry a greeting", async ({ page }) => {
+  await page.goto("/#hey_jake");
+  test.skip(!(await settle(page)), "WebGL2 is unavailable here, so the plain version is served");
+
+  const root = page.locator("html");
+  await expect(root).toHaveAttribute("data-say", "hey jake");
+  await expect(root).toHaveAttribute("data-mode", "say");
+});
+
+test("typed commands open the clock and the sand", async ({ page }) => {
+  await page.goto("/");
+  test.skip(!(await settle(page)), "WebGL2 is unavailable here, so the plain version is served");
+
+  const root = page.locator("html");
+  for (const key of ["t", "i", "Enter"]) await page.keyboard.press(key);
+  await expect(root).toHaveAttribute("data-mode", "clock");
+  await page.keyboard.press("Escape");
+  await expect(root).not.toHaveAttribute("data-mode", "clock");
+
+  for (const key of ["s", "a", "Enter"]) await page.keyboard.press(key);
+  await expect(root).toHaveAttribute("data-mode", "sand");
+  await page.keyboard.press("ArrowDown");
+  await expect(root).not.toHaveAttribute("data-mode", "sand");
+  await expect(root).toHaveAttribute("data-view", "scwlkr");
+});
+
+test("a sideways drag types on a phone", async ({ page }) => {
+  await page.goto("/");
+  test.skip(!(await settle(page)), "WebGL2 is unavailable here, so the plain version is served");
+
+  await page.evaluate(() => {
+    const fire = (type: string, x: number, y: number) => window.dispatchEvent(
+      new PointerEvent(type, { pointerType: "touch", clientX: x, clientY: y, button: 0, bubbles: true }),
+    );
+    const x = window.innerWidth * 0.5;
+    fire("pointerdown", x - 60, 300);
+    fire("pointermove", x - 30, 301);
+    fire("pointermove", x, 302);
+    fire("pointerup", x, 302);
+  });
+  await expect(page.locator("html")).toHaveClass(/typing/);
+});
