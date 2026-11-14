@@ -848,7 +848,8 @@ function live() {
   }
 
   // Phones have no keys: drag sideways and the alphabet runs under the finger; let go to keep the letter.
-  const KEYS = ["<", ..."abcdefghijklmnopqrstuvwxyz", " "];
+  // The left edge deletes, the right edge sends, and just inside it is the space. Stop for a moment and it sends itself.
+  const KEYS = ["<", ..."abcdefghijklmnopqrstuvwxyz", " ", " ", ">"];
   let scrub = null;
 
   function pick(x) {
@@ -856,24 +857,37 @@ function live() {
     if (key === scrub) return;
     scrub = key;
     window.clearTimeout(queryTimer);
-    if (key === "<" && !query) return;
+    if ((key === "<" || key === ">") && !query) return;
     root.classList.add("typing");
-    const preview = key === "<" ? query : `${query}${key === " " ? "_" : key}`;
+    const preview = key === "<" ? query : key === ">" ? `${query} \u2192` : `${query}${key === " " ? "_" : key}`;
     const lit = key === "<" ? query.length - 1 : query.length;
     show({ shape: "text", text: preview, lit, hot: true }, { stagger: 0.04, turb: 0.1 });
   }
 
+  function send() {
+    if (!query.trim()) return;
+    submit();
+    if (query && !thinking) {
+      window.clearTimeout(queryTimer);
+      queryTimer = window.setTimeout(clearQuery, 3500);
+    }
+  }
+
   function keep() {
-    if (scrub === "<") query = query.slice(0, -1);
-    else if (scrub !== null && query.length < 28) query += scrub;
+    const key = scrub;
     scrub = null;
-    if (query.trim()) {
-      type();
+    if (key === "<") query = query.slice(0, -1);
+    else if (key !== null && key !== ">" && query.length < 28) query += key;
+    if (!query.trim()) {
+      query = "";
+      root.classList.remove("typing");
+      home();
       return;
     }
-    query = "";
-    root.classList.remove("typing");
-    home();
+    type();
+    window.clearTimeout(queryTimer);
+    if (key === ">") send();
+    else queryTimer = window.setTimeout(send, 3000);
   }
 
   // ---- input ----
@@ -955,6 +969,8 @@ function live() {
     if (event.pointerType !== "mouse") ptr.fresh = true;
     point(event);
     press = { x: event.clientX, y: event.clientY, at: performance.now(), moved: false, touch: event.pointerType !== "mouse" };
+    // A finger on the glass means the word is not finished: hold the automatic send.
+    if (press.touch && query && !thinking) window.clearTimeout(queryTimer);
     held = false;
     window.clearTimeout(holdTimer);
     holdTimer = window.setTimeout(() => {
@@ -978,6 +994,10 @@ function live() {
       keep();
       return;
     }
+    if (press && press.touch && query && !thinking) {
+      window.clearTimeout(queryTimer);
+      queryTimer = window.setTimeout(send, 3000);
+    }
     if (press && press.touch) {
       const dx = event.clientX - press.x;
       const dy = event.clientY - press.y;
@@ -999,7 +1019,7 @@ function live() {
   canvas.addEventListener("click", (event) => {
     if (held || (press && press.moved)) return;
     if (query) {
-      if (press && press.touch) submit();
+      if (press && press.touch) send();
       else clearQuery();
       return;
     }
