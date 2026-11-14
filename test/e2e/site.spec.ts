@@ -187,6 +187,26 @@ test("a sideways drag types on a phone", async ({ page }) => {
   await expect(page.locator("html")).toHaveClass(/typing/);
 });
 
+test("a finger that rests before dragging still types", async ({ page }) => {
+  await page.goto("/");
+  test.skip(!(await settle(page)), "WebGL2 is unavailable here, so the plain version is served");
+
+  await page.evaluate(async () => {
+    const fire = (type: string, x: number, y: number) => window.dispatchEvent(
+      new PointerEvent(type, { pointerType: "touch", clientX: x, clientY: y, button: 0, bubbles: true }),
+    );
+    const x = window.innerWidth * 0.5;
+    fire("pointerdown", x - 60, 300);
+    await new Promise((resolve) => window.setTimeout(resolve, 700));
+    fire("pointermove", x - 30, 301);
+    fire("pointermove", x, 302);
+    fire("pointerup", x, 302);
+  });
+  const root = page.locator("html");
+  await expect(root).toHaveClass(/typing/);
+  await expect(root).not.toHaveClass(/hold/);
+});
+
 test("anything else gets a one-sentence reply from the in-browser model", async ({ page }) => {
   await page.goto("/");
   test.skip(!(await settle(page)), "WebGL2 is unavailable here, so the plain version is served");

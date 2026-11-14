@@ -852,7 +852,7 @@ function live() {
   let scrub = null;
 
   function pick(x) {
-    const key = KEYS[clamp(Math.floor(((x / vw - 0.06) / 0.88) * KEYS.length), 0, KEYS.length - 1)];
+    const key = KEYS[clamp(Math.floor((x / vw) * KEYS.length), 0, KEYS.length - 1)];
     if (key === scrub) return;
     scrub = key;
     window.clearTimeout(queryTimer);
@@ -928,11 +928,17 @@ function live() {
   window.addEventListener("pointermove", (event) => {
     point(event);
     if (event.pointerType === "mouse" && !root.classList.contains("fine")) root.classList.add("fine");
-    if (press && !held && Math.hypot(event.clientX - press.x, event.clientY - press.y) > 12) {
+    if (press && (!held || press.touch) && Math.hypot(event.clientX - press.x, event.clientY - press.y) > 10) {
       if (press.touch && !press.moved) {
         window.clearTimeout(holdTimer);
-        press.scrub = Math.abs(event.clientX - press.x) > Math.abs(event.clientY - press.y) * 1.3;
-        if (press.scrub) touched();
+        press.scrub = Math.abs(event.clientX - press.x) >= Math.abs(event.clientY - press.y);
+        if (press.scrub) {
+          // A finger that rested before it moved had started a hold; a sideways drag wins.
+          held = false;
+          holding = false;
+          root.classList.remove("hold");
+          touched();
+        }
       }
       press.moved = true;
     }
@@ -956,7 +962,7 @@ function live() {
       holding = true;
       root.classList.add("hold");
       touched();
-    }, 260);
+    }, press.touch ? 480 : 260);
   }, { passive: true });
 
   function release(event) {
