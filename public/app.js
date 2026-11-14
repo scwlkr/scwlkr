@@ -483,6 +483,7 @@ function live() {
   let held = false;
   let holdTimer = 0;
   let press = null;
+  let acted = false;
   let auto = !location.hash;
   let nextAt = 0;
   let resumeAt = 0;
@@ -495,6 +496,7 @@ function live() {
   }
 
   function touched() {
+    acted = true;
     auto = false;
     resumeAt = performance.now() + 45000;
     wake();
@@ -838,6 +840,7 @@ function live() {
   const beat = new Promise((resolve) => window.setTimeout(resolve, 520));
   Promise.all([fonts, beat]).then(() => {
     kick = 1;
+    if (acted) return;
     go(first, false);
     since = -0.2;
   });

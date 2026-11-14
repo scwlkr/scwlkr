@@ -89,6 +89,7 @@ h1 img {
 
 #out a::after {
   content: " \2197";
+  content: " \2197" / "";
 }
 
 #out a:hover,

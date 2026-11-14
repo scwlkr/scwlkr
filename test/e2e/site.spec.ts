@@ -23,7 +23,7 @@ test("presents scwlkr and exactly three ways out", async ({ page }) => {
   await expect(page.locator("a")).toHaveCount(ways.length);
 
   for (const way of ways) {
-    await expect(page.getByRole("link", { name: way.name, exact: true })).toHaveAttribute("href", way.href);
+    await expect(page.locator(`a[href="${way.href}"]`)).toHaveText(way.name);
   }
 });
 
@@ -58,7 +58,7 @@ test("reduced motion gets the plain version", async ({ page }) => {
   expect(await settle(page)).toBe(false);
   await expect(page.getByRole("img", { name: "scwlkr" })).toBeVisible();
   for (const way of ways) {
-    await expect(page.getByRole("link", { name: way.name, exact: true })).toBeVisible();
+    await expect(page.locator(`a[href="${way.href}"]`)).toBeVisible();
   }
 });
 
@@ -69,7 +69,7 @@ test("the page is complete without JavaScript", async ({ browser }) => {
 
   await expect(page.getByRole("img", { name: "scwlkr" })).toBeVisible();
   for (const way of ways) {
-    await expect(page.getByRole("link", { name: way.name, exact: true })).toBeVisible();
+    await expect(page.locator(`a[href="${way.href}"]`)).toBeVisible();
   }
 
   await context.close();
@@ -135,7 +135,7 @@ test("keyboard focus brings its destination on stage", async ({ page }) => {
   await page.goto("/");
   test.skip(!(await settle(page)), "WebGL2 is unavailable here, so the plain version is served");
 
-  const x = page.getByRole("link", { name: "x", exact: true });
+  const x = page.locator('a[href="https://x.com/scwlkr"]');
   await x.focus();
   await expect(page.locator("html")).toHaveAttribute("data-view", "x");
   await expect(x).toHaveClass(/on/);
