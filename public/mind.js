@@ -1,130 +1,88 @@
-// mind.js — answers typed text with one short sentence from an on-device model.
-// Uses the browser's built-in model (Chrome Prompt API, `LanguageModel`) only.
-// Nothing loads until reply() is first called. reply() never throws and settles
-// within 20 seconds; it resolves null when no model can answer here, including
-// when the browser has the feature but has not downloaded its model yet.
+// mind.js — answers typed text with one short, probably nonsensical sentence.
+// A tiny real language model (TinyStories-1M, ~5 MB) runs in a Worker in every
+// browser, so the page never freezes and every visitor gets the same mind.
+// Nothing loads until reply() is first called. reply() never throws and
+// settles within 20 seconds, resolving null when no sentence came out.
 
 const LIMIT_MS = 20000;
 const MAX_CHARS = 90;
-const LANG = ["en"];
+const TRIES = 3;
 
-const SYSTEM =
-  "You are the quiet mind inside scwlkr's one-screen website, a field of white dust on charcoal. " +
-  "Answer whatever the visitor types with exactly one short sentence of at most twelve words. " +
-  "Be direct, dry, self-aware and a little strange. Plain text only: no quotes, no emoji, " +
-  "no markdown, no lists, no questions back, no greetings, no explanations. " +
-  "Never claim facts about scwlkr, projects, jobs, customers or numbers. " +
-  "If unsure, say something oddly calm instead.";
+let worker = null;
+let seq = 0;
+const waiting = new Map();
 
-const OPTIONS = {
-  initialPrompts: [{ role: "system", content: SYSTEM }],
-  expectedInputs: [{ type: "text", languages: LANG }],
-  expectedOutputs: [{ type: "text", languages: LANG }],
-};
-
-let sessionPromise = null; // shared base session (holds the system prompt)
-let dead = false; // true once we know no model can run here
-
-function api() {
+function getWorker() {
+  if (worker) return worker;
+  if (typeof Worker !== "function") return null;
   try {
-    return typeof globalThis.LanguageModel === "function" ||
-      typeof globalThis.LanguageModel === "object"
-      ? globalThis.LanguageModel
-      : null;
+    worker = new Worker(new URL("./mind/worker.js", import.meta.url));
   } catch {
     return null;
   }
+  worker.onmessage = (e) => {
+    const { id, line } = e.data || {};
+    const done = waiting.get(id);
+    if (done) { waiting.delete(id); done(typeof line === "string" ? line : null); }
+  };
+  worker.onerror = () => {
+    for (const done of waiting.values()) done(null);
+    waiting.clear();
+    try { worker.terminate(); } catch {}
+    worker = null; // a later call may try again
+  };
+  return worker;
 }
 
-async function getSession() {
-  if (sessionPromise) return sessionPromise;
-  const LM = api();
-  if (!LM || typeof LM.create !== "function") {
-    dead = true;
-    return null;
-  }
-  sessionPromise = (async () => {
-    // Some builds expose LanguageModel but never answer availability(); treat
-    // a hang as "no model here" so later calls resolve null at once.
-    let state = "unavailable";
-    try {
-      state = await Promise.race([
-        LM.availability(OPTIONS),
-        new Promise((r) => setTimeout(() => r("unavailable"), 5000)),
-      ]);
-    } catch {
-      state = "unavailable";
-    }
-    if (state === "unavailable") {
-      dead = true;
-      return null;
-    }
-    // Only answer when the model is already on this machine. Creating a session in
-    // the "downloadable" state would make the visitor's browser fetch several
-    // gigabytes because they pressed Enter on a personal site. Not our call to make.
-    if (state !== "available") {
-      sessionPromise = null;
-      return null;
-    }
-    return await LM.create(OPTIONS);
-  })().catch(() => {
-    sessionPromise = null; // allow a later retry (e.g. needed a user gesture)
-    return null;
+function ask(text) {
+  const w = getWorker();
+  if (!w) return Promise.resolve(null);
+  const id = ++seq;
+  return new Promise((resolve) => {
+    waiting.set(id, resolve);
+    try { w.postMessage({ id, text }); } catch { waiting.delete(id); resolve(null); }
   });
-  return sessionPromise;
 }
 
 function clean(raw) {
   if (typeof raw !== "string") return null;
   let s = raw
-    .replace(/```[\s\S]*?```/g, " ")
-    .replace(/[*_`#>~|\[\]]/g, "")
-    .replace(/["“”«»]/g, "")
-    .replace(/^\s*['‘’]+|['‘’]+\s*$/g, "")
-    .replace(/^\s*[-•\d.)]+\s+/, "")
+    .replace(/["“”]/g, " ")
+    .replace(/[*_`#>~|\[\]<>{}]/g, "")
     .replace(/\s+/g, " ")
-    .trim();
-  if (!s) return null;
-  const m = s.match(/^.*?[.!?…](?=\s|$)/);
+    .trim()
+    .replace(/^[,;:.!?'\-\s]+/, "");
+  if (!s || !/[a-z]{2}/i.test(s)) return null;
+  const m = s.match(/^.*?[.!?](?=\s|$)/);
   if (m) s = m[0];
+  s = s.replace(/[,;:\s'-]+$/, "");
   if (s.length > MAX_CHARS) {
     let cut = s.slice(0, MAX_CHARS - 1);
     const sp = cut.lastIndexOf(" ");
     if (sp > 20) cut = cut.slice(0, sp);
-    s = cut.replace(/[\s,;:–—-]+$/, "") + ".";
+    s = cut.replace(/[\s,;:'-]+$/, "") + ".";
   }
-  if (!/[.!?…]$/.test(s)) s = s.length < MAX_CHARS ? s + "." : s.slice(0, -1) + ".";
-  return s.length > 1 ? s : null;
+  if (!/[.!?]$/.test(s)) s += ".";
+  s = s.charAt(0).toUpperCase() + s.slice(1);
+  return s.length > 2 ? s : null;
 }
 
-async function run(text, signal) {
-  const base = await getSession();
-  if (!base || signal.aborted) return null;
-  let s = null;
-  try {
-    // Clone so each reply is independent and context never piles up.
-    s = typeof base.clone === "function" ? await base.clone({ signal }) : base;
-    const out = await s.prompt(text, { signal });
-    return clean(out);
-  } finally {
-    if (s && s !== base) {
-      try { s.destroy(); } catch {}
-    }
+async function run(input, deadline) {
+  for (let i = 0; i < TRIES && Date.now() < deadline; i++) {
+    const line = clean(await ask(input));
+    if (line) return line;
   }
+  return null;
 }
 
 export async function reply(text) {
   try {
-    if (dead) return null;
-    const input = String(text ?? "").replace(/\s+/g, " ").trim().slice(0, 400);
+    const input = String(text ?? "").replace(/\s+/g, " ").trim().slice(0, 200);
     if (!input) return null;
-    const ctrl = new AbortController();
     let timer;
-    const timeout = new Promise((resolve) => {
-      timer = setTimeout(() => { ctrl.abort(); resolve(null); }, LIMIT_MS);
-    });
+    const timeout = new Promise((resolve) => { timer = setTimeout(() => resolve(null), LIMIT_MS); });
     try {
-      return await Promise.race([run(input, ctrl.signal).catch(() => null), timeout]);
+      return await Promise.race([run(input, Date.now() + LIMIT_MS).catch(() => null), timeout]);
     } finally {
       clearTimeout(timer);
     }

@@ -17,7 +17,7 @@ There is no interface. The screen holds one thing at a time, made of dust: the s
 - press and hold pulls the dust into the pointer, release throws it back out;
 - typing anywhere spells the letters in dust, a matching destination ghosts in, and Enter goes there;
 - a word that is a destination is itself the link;
-- on a phone, a sideways drag runs the alphabet under the finger and letting go keeps the letter; a tap is Enter.
+- on a phone, a sideways drag runs the alphabet under the finger and letting go keeps the letter. The left edge deletes, the right edge sends, the space sits just inside the right edge, and a short pause sends on its own.
 
 Left alone, the page plays itself through the views. Left alone for a minute and a half, whatever is on screen crumbles into a pile of sand until it is touched.
 
@@ -26,7 +26,7 @@ Hidden extras, none of them announced anywhere on the page:
 - `scwlkr.com/#anything` opens spelling that word as a greeting (underscores are spaces; a hashed blocklist drops the worst words);
 - typing `time` shows a live clock in dust, `sand` collapses the screen on demand;
 - the raccoon's eyes follow the pointer, it blinks, and clicking its nose makes it sneeze;
-- typing anything else and pressing Enter asks a small language model running in the visitor's own browser for a one-sentence reply (`public/mind.js`, loaded only then; where no model can run, nothing happens).
+- typing anything else and pressing Enter gets a one-sentence reply from a tiny language model (TinyStories-1M, about 5 MB) running in plain JavaScript in a Worker in the visitor's own browser (`public/mind.js`, `public/mind/`, fetched only then). The replies are meant to be nonsense.
 
 ## Voice
 
@@ -46,6 +46,6 @@ Exactly three outbound links: `https://wlkr.si`, `https://x.com/scwlkr`, `https:
 
 ## Runtime and acceptance
 
-Cloudflare Workers Static Assets serves `public/` on `scwlkr.com`; the tiny Worker module only supplies an asset fallback. Plain HTML, CSS, and vanilla JavaScript with no dependencies or build step. The strict content security policy stays: no inline script or style, nothing loaded from other origins.
+Cloudflare Workers Static Assets serves `public/` on `scwlkr.com`; the tiny Worker module only supplies an asset fallback. Plain HTML, CSS, and vanilla JavaScript with no dependencies or build step. The strict content security policy stays: no inline script or style, nothing loaded from other origins. The page may fetch from its own origin only (`connect-src 'self'`), which is how the reply model loads.
 
 The live version needs WebGL2 (the dust is simulated on the GPU with transform feedback). Without JavaScript, without WebGL2, or when reduced motion is requested, the plain version is the site: the wordmark and the three links. Both versions must support keyboard focus and fit narrow screens without horizontal overflow. `npm run release:check` is the local release gate and `npm run verify:public` checks the deployed result.

@@ -848,32 +848,46 @@ function live() {
   }
 
   // Phones have no keys: drag sideways and the alphabet runs under the finger; let go to keep the letter.
-  const KEYS = ["<", ..."abcdefghijklmnopqrstuvwxyz", " "];
+  // The left edge deletes, the right edge sends, and just inside it is the space. Stop for a moment and it sends itself.
+  const KEYS = ["<", ..."abcdefghijklmnopqrstuvwxyz", " ", " ", ">"];
   let scrub = null;
 
   function pick(x) {
-    const key = KEYS[clamp(Math.floor(((x / vw - 0.06) / 0.88) * KEYS.length), 0, KEYS.length - 1)];
+    const key = KEYS[clamp(Math.floor((x / vw) * KEYS.length), 0, KEYS.length - 1)];
     if (key === scrub) return;
     scrub = key;
     window.clearTimeout(queryTimer);
-    if (key === "<" && !query) return;
+    if ((key === "<" || key === ">") && !query) return;
     root.classList.add("typing");
-    const preview = key === "<" ? query : `${query}${key === " " ? "_" : key}`;
+    const preview = key === "<" ? query : key === ">" ? `${query} \u2192` : `${query}${key === " " ? "_" : key}`;
     const lit = key === "<" ? query.length - 1 : query.length;
     show({ shape: "text", text: preview, lit, hot: true }, { stagger: 0.04, turb: 0.1 });
   }
 
+  function send() {
+    if (!query.trim()) return;
+    submit();
+    if (query && !thinking) {
+      window.clearTimeout(queryTimer);
+      queryTimer = window.setTimeout(clearQuery, 3500);
+    }
+  }
+
   function keep() {
-    if (scrub === "<") query = query.slice(0, -1);
-    else if (scrub !== null && query.length < 28) query += scrub;
+    const key = scrub;
     scrub = null;
-    if (query.trim()) {
-      type();
+    if (key === "<") query = query.slice(0, -1);
+    else if (key !== null && key !== ">" && query.length < 28) query += key;
+    if (!query.trim()) {
+      query = "";
+      root.classList.remove("typing");
+      home();
       return;
     }
-    query = "";
-    root.classList.remove("typing");
-    home();
+    type();
+    window.clearTimeout(queryTimer);
+    if (key === ">") send();
+    else queryTimer = window.setTimeout(send, 3000);
   }
 
   // ---- input ----
@@ -928,11 +942,17 @@ function live() {
   window.addEventListener("pointermove", (event) => {
     point(event);
     if (event.pointerType === "mouse" && !root.classList.contains("fine")) root.classList.add("fine");
-    if (press && !held && Math.hypot(event.clientX - press.x, event.clientY - press.y) > 12) {
+    if (press && (!held || press.touch) && Math.hypot(event.clientX - press.x, event.clientY - press.y) > 10) {
       if (press.touch && !press.moved) {
         window.clearTimeout(holdTimer);
-        press.scrub = Math.abs(event.clientX - press.x) > Math.abs(event.clientY - press.y) * 1.3;
-        if (press.scrub) touched();
+        press.scrub = Math.abs(event.clientX - press.x) >= Math.abs(event.clientY - press.y);
+        if (press.scrub) {
+          // A finger that rested before it moved had started a hold; a sideways drag wins.
+          held = false;
+          holding = false;
+          root.classList.remove("hold");
+          touched();
+        }
       }
       press.moved = true;
     }
@@ -949,6 +969,8 @@ function live() {
     if (event.pointerType !== "mouse") ptr.fresh = true;
     point(event);
     press = { x: event.clientX, y: event.clientY, at: performance.now(), moved: false, touch: event.pointerType !== "mouse" };
+    // A finger on the glass means the word is not finished: hold the automatic send.
+    if (press.touch && query && !thinking) window.clearTimeout(queryTimer);
     held = false;
     window.clearTimeout(holdTimer);
     holdTimer = window.setTimeout(() => {
@@ -956,7 +978,7 @@ function live() {
       holding = true;
       root.classList.add("hold");
       touched();
-    }, 260);
+    }, press.touch ? 480 : 260);
   }, { passive: true });
 
   function release(event) {
@@ -971,6 +993,10 @@ function live() {
       ptr.want = 0;
       keep();
       return;
+    }
+    if (press && press.touch && query && !thinking) {
+      window.clearTimeout(queryTimer);
+      queryTimer = window.setTimeout(send, 3000);
     }
     if (press && press.touch) {
       const dx = event.clientX - press.x;
@@ -993,7 +1019,7 @@ function live() {
   canvas.addEventListener("click", (event) => {
     if (held || (press && press.moved)) return;
     if (query) {
-      if (press && press.touch) submit();
+      if (press && press.touch) send();
       else clearQuery();
       return;
     }
