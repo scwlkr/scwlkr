@@ -169,7 +169,7 @@ h1 img {
   content: none;
 }
 
-.live:not(.typing) #out a.on {
+.live:not(.typing):not([data-mode]) #out a.on {
   pointer-events: auto;
 }
 
