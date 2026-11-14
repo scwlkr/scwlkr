@@ -74,6 +74,7 @@ if (siteUrl) {
     const assetResponse = await fetch(new URL(asset, siteUrl), { headers: agent });
     assert.equal(assetResponse.status, 200, `${asset} must be served`);
     assert.doesNotMatch(assetResponse.headers.get("content-type") ?? "", /text\/html/i, `${asset} must not fall back to the page`);
+    await assetResponse.arrayBuffer();
   }
 
   const retiredApi = await fetch(new URL("/api/readiness", siteUrl), { headers: agent });
