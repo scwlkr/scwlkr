@@ -170,24 +170,7 @@ test("typed commands open the clock and the sand", async ({ page }) => {
   await expect(root).toHaveAttribute("data-view", "scwlkr");
 });
 
-test("a sideways drag types on a phone", async ({ page }) => {
-  await page.goto("/");
-  test.skip(!(await settle(page)), "WebGL2 is unavailable here, so the plain version is served");
-
-  await page.evaluate(() => {
-    const fire = (type: string, x: number, y: number) => window.dispatchEvent(
-      new PointerEvent(type, { pointerType: "touch", clientX: x, clientY: y, button: 0, bubbles: true }),
-    );
-    const x = window.innerWidth * 0.5;
-    fire("pointerdown", x - 60, 300);
-    fire("pointermove", x - 30, 301);
-    fire("pointermove", x, 302);
-    fire("pointerup", x, 302);
-  });
-  await expect(page.locator("html")).toHaveClass(/typing/);
-});
-
-test("a finger that rests before dragging still types", async ({ page }) => {
+test("a finger writes in dust on a phone", async ({ page }) => {
   await page.goto("/");
   test.skip(!(await settle(page)), "WebGL2 is unavailable here, so the plain version is served");
 
@@ -195,15 +178,13 @@ test("a finger that rests before dragging still types", async ({ page }) => {
     const fire = (type: string, x: number, y: number) => window.dispatchEvent(
       new PointerEvent(type, { pointerType: "touch", clientX: x, clientY: y, button: 0, bubbles: true }),
     );
-    const x = window.innerWidth * 0.5;
-    fire("pointerdown", x - 60, 300);
-    await new Promise((resolve) => window.setTimeout(resolve, 700));
-    fire("pointermove", x - 30, 301);
-    fire("pointermove", x, 302);
-    fire("pointerup", x, 302);
+    // Rest first, as a real finger does, then draw.
+    fire("pointerdown", 100, 300);
+    await new Promise((resolve) => window.setTimeout(resolve, 600));
+    for (let i = 1; i <= 10; i += 1) fire("pointermove", 100 + i * 12, 300 + i * 9);
   });
   const root = page.locator("html");
-  await expect(root).toHaveClass(/typing/);
+  await expect(root).toHaveAttribute("data-mode", "ink");
   await expect(root).not.toHaveClass(/hold/);
 });
 
@@ -217,20 +198,22 @@ test("anything else gets a one-sentence reply from the in-browser model", async 
   await expect(root).toHaveAttribute("data-mode", "say");
 });
 
-test("on a phone a kept letter sends itself after a pause", async ({ page }) => {
+test("handwriting is read: a drawn x goes to x", async ({ page }) => {
   await page.goto("/");
   test.skip(!(await settle(page)), "WebGL2 is unavailable here, so the plain version is served");
 
-  await page.evaluate(() => {
+  await page.evaluate(async () => {
     const fire = (type: string, x: number, y: number) => window.dispatchEvent(
       new PointerEvent(type, { pointerType: "touch", clientX: x, clientY: y, button: 0, bubbles: true }),
     );
-    // "t" is the 21st of 30 slots across the screen.
-    const x = (window.innerWidth * 20.5) / 30;
-    fire("pointerdown", x - 60, 300);
-    fire("pointermove", x - 30, 301);
-    fire("pointermove", x, 302);
-    fire("pointerup", x, 302);
+    const stroke = async (x0: number, y0: number, x1: number, y1: number) => {
+      fire("pointerdown", x0, y0);
+      for (let i = 1; i <= 12; i += 1) fire("pointermove", x0 + ((x1 - x0) * i) / 12, y0 + ((y1 - y0) * i) / 12);
+      fire("pointerup", x1, y1);
+      await new Promise((resolve) => window.setTimeout(resolve, 150));
+    };
+    await stroke(120, 260, 240, 400);
+    await stroke(240, 260, 120, 400);
   });
-  await expect(page.locator("html")).toHaveAttribute("data-mode", "clock", { timeout: 6_000 });
+  await expect(page.locator("html")).toHaveAttribute("data-view", "x", { timeout: 8_000 });
 });

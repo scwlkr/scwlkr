@@ -847,23 +847,6 @@ function live() {
       });
   }
 
-  // Phones have no keys: drag sideways and the alphabet runs under the finger; let go to keep the letter.
-  // The left edge deletes, the right edge sends, and just inside it is the space. Stop for a moment and it sends itself.
-  const KEYS = ["<", ..."abcdefghijklmnopqrstuvwxyz", " ", " ", ">"];
-  let scrub = null;
-
-  function pick(x) {
-    const key = KEYS[clamp(Math.floor((x / vw) * KEYS.length), 0, KEYS.length - 1)];
-    if (key === scrub) return;
-    scrub = key;
-    window.clearTimeout(queryTimer);
-    if ((key === "<" || key === ">") && !query) return;
-    root.classList.add("typing");
-    const preview = key === "<" ? query : key === ">" ? `${query} \u2192` : `${query}${key === " " ? "_" : key}`;
-    const lit = key === "<" ? query.length - 1 : query.length;
-    show({ shape: "text", text: preview, lit, hot: true }, { stagger: 0.04, turb: 0.1 });
-  }
-
   function send() {
     if (!query.trim()) return;
     submit();
@@ -873,21 +856,113 @@ function live() {
     }
   }
 
-  function keep() {
-    const key = scrub;
-    scrub = null;
-    if (key === "<") query = query.slice(0, -1);
-    else if (key !== null && key !== ">" && query.length < 28) query += key;
-    if (!query.trim()) {
-      query = "";
-      root.classList.remove("typing");
-      home();
+  // Phones have no keys, so the finger writes. Every grain runs to the line being drawn;
+  // when the hand stops, the writing is read and becomes the typed word.
+  let ink = [];
+  let inkDirty = false;
+  let inkTimer = 0;
+  let hand = null;
+
+  function inkOpen(x, y) {
+    if (!ink.length) {
+      clearQuery(false);
+      stopClock();
+      setMode("ink");
+      face = null;
+    }
+    window.clearTimeout(inkTimer);
+    ink.push([[x, y]]);
+    inkDirty = true;
+  }
+
+  function inkDraw(x, y) {
+    const stroke = ink[ink.length - 1];
+    const lastPoint = stroke[stroke.length - 1];
+    if (Math.hypot(x - lastPoint[0], y - lastPoint[1]) < 2) return;
+    stroke.push([x, y]);
+    inkDirty = true;
+  }
+
+  function inkRender() {
+    const x0 = [];
+    const y0 = [];
+    const x1 = [];
+    const y1 = [];
+    const until = [];
+    let length = 0;
+    const nib = clamp(vw * 0.011, 3.5, 8);
+    for (const stroke of ink) {
+      const dotted = stroke.length < 2;
+      const points = dotted ? [stroke[0], [stroke[0][0] + 0.5, stroke[0][1] + 0.5]] : stroke;
+      for (let k = 1; k < points.length; k += 1) {
+        // A dot has no length of its own, so it is given enough to hold some grains.
+        const run = dotted ? nib * 3 : Math.max(Math.hypot(points[k][0] - points[k - 1][0], points[k][1] - points[k - 1][1]), 0.01);
+        x0.push(points[k - 1][0]);
+        y0.push(points[k - 1][1]);
+        x1.push(points[k][0]);
+        y1.push(points[k][1]);
+        length += run;
+        until.push(length);
+      }
+    }
+    if (!until.length) return;
+    for (let i = 0; i < count; i += 1) {
+      // Each grain owns a fixed place along the line, so it slides as the line grows instead of jumping.
+      const reach = seeds[i * 4 + 2] * length;
+      let low = 0;
+      let high = until.length - 1;
+      while (low < high) {
+        const mid = (low + high) >> 1;
+        if (until[mid] < reach) low = mid + 1;
+        else high = mid;
+      }
+      const from = low ? until[low - 1] : 0;
+      const along = (reach - from) / Math.max(until[low] - from, 0.01);
+      const turn = seeds[i * 4 + 3] * Math.PI * 2;
+      const spread = Math.sqrt(seeds[i * 4 + 1]) * nib;
+      const o = i * 4;
+      targets[o] = x0[low] + (x1[low] - x0[low]) * along + Math.cos(turn) * spread - halfW;
+      targets[o + 1] = y0[low] + (y1[low] - y0[low]) * along + Math.sin(turn) * spread - halfH;
+      targets[o + 2] = 1;
+      targets[o + 3] = 1;
+    }
+    upload();
+    area = Math.max(length, nib) * nib * 2.4;
+  }
+
+  function inkRead() {
+    const strokes = ink;
+    ink = [];
+    const known = [...VIEWS.filter((view) => view.slug !== "mark").map((view) => view.slug), ...Object.keys(COMMANDS)];
+    (hand || import("./hand.js"))
+      .then((reader) => reader.read(strokes, known))
+      .catch(() => "")
+      .then((written) => {
+        if (mode !== "ink" || ink.length) return;
+        const word = String(written || "").slice(0, 28).trim();
+        if (!word) {
+          home({ stagger: 0.4, turb: 0.8 });
+          return;
+        }
+        query = word;
+        type();
+        window.clearTimeout(queryTimer);
+        queryTimer = window.setTimeout(send, 1500);
+      });
+  }
+
+  // Lifting the finger ends a stroke. One quick straight flick up or down is still a page turn.
+  function inkClose(startedAt) {
+    const stroke = ink[ink.length - 1];
+    const dx = stroke[stroke.length - 1][0] - stroke[0][0];
+    const dy = stroke[stroke.length - 1][1] - stroke[0][1];
+    if (ink.length === 1 && performance.now() - startedAt < 320 && Math.abs(dy) > 70 && Math.abs(dx) < Math.abs(dy) * 0.4) {
+      ink = [];
+      setMode("");
+      step(dy < 0 ? 1 : -1);
       return;
     }
-    type();
-    window.clearTimeout(queryTimer);
-    if (key === ">") send();
-    else queryTimer = window.setTimeout(send, 3000);
+    inkTimer = window.setTimeout(inkRead, 950);
   }
 
   // ---- input ----
@@ -944,21 +1019,20 @@ function live() {
     if (event.pointerType === "mouse" && !root.classList.contains("fine")) root.classList.add("fine");
     if (press && (!held || press.touch) && Math.hypot(event.clientX - press.x, event.clientY - press.y) > 10) {
       if (press.touch && !press.moved) {
+        // A finger that rested before it moved had started a hold; writing wins.
         window.clearTimeout(holdTimer);
-        press.scrub = Math.abs(event.clientX - press.x) >= Math.abs(event.clientY - press.y);
-        if (press.scrub) {
-          // A finger that rested before it moved had started a hold; a sideways drag wins.
-          held = false;
-          holding = false;
-          root.classList.remove("hold");
-          touched();
-        }
+        held = false;
+        holding = false;
+        root.classList.remove("hold");
+        touched();
+        press.writing = true;
+        inkOpen(press.x, press.y);
       }
       press.moved = true;
     }
-    if (press && press.scrub) {
+    if (press && press.writing) {
       ptr.want = 0;
-      pick(event.clientX);
+      inkDraw(event.clientX, event.clientY);
     }
     nextAt = Math.max(nextAt, performance.now() + 3500);
     wake();
@@ -969,8 +1043,13 @@ function live() {
     if (event.pointerType !== "mouse") ptr.fresh = true;
     point(event);
     press = { x: event.clientX, y: event.clientY, at: performance.now(), moved: false, touch: event.pointerType !== "mouse" };
-    // A finger on the glass means the word is not finished: hold the automatic send.
+    // A finger on the glass means the word is not finished: hold the automatic send and the reading.
     if (press.touch && query && !thinking) window.clearTimeout(queryTimer);
+    if (press.touch) {
+      window.clearTimeout(inkTimer);
+      if (!hand) hand = import("./hand.js");
+      hand.catch(() => {});
+    }
     held = false;
     window.clearTimeout(holdTimer);
     holdTimer = window.setTimeout(() => {
@@ -988,25 +1067,25 @@ function live() {
       burst = 1;
       root.classList.remove("hold");
     }
-    if (press && press.scrub) {
-      press.scrub = false;
+    if (press && press.writing) {
+      press.writing = false;
       ptr.want = 0;
-      keep();
+      inkClose(press.at);
       return;
     }
-    if (press && press.touch && query && !thinking) {
-      window.clearTimeout(queryTimer);
-      queryTimer = window.setTimeout(send, 3000);
-    }
     if (press && press.touch) {
-      const dx = event.clientX - press.x;
-      const dy = event.clientY - press.y;
-      const far = Math.max(Math.abs(dx), Math.abs(dy));
-      if (!held && far > 44 && performance.now() - press.at < 800) {
-        const along = Math.abs(dy) >= Math.abs(dx) ? dy : dx;
-        step(along < 0 ? 1 : -1);
-      }
       ptr.want = 0;
+      if (ink.length && !press.moved && !held) {
+        // A tap while writing is a dot, as on an i.
+        ink.push([[press.x, press.y]]);
+        inkDirty = true;
+        inkTimer = window.setTimeout(inkRead, 950);
+      } else if (ink.length) {
+        inkTimer = window.setTimeout(inkRead, 950);
+      } else if (query && !thinking) {
+        window.clearTimeout(queryTimer);
+        queryTimer = window.setTimeout(send, 3000);
+      }
     }
   }
 
@@ -1017,7 +1096,7 @@ function live() {
   });
 
   canvas.addEventListener("click", (event) => {
-    if (held || (press && press.moved)) return;
+    if (held || (press && press.moved) || mode === "ink") return;
     if (query) {
       if (press && press.touch) send();
       else clearQuery();
@@ -1213,7 +1292,11 @@ function live() {
     pull += ((drawing ? 1 : 0) - pull) * Math.min(1, dt * (drawing ? 5 : 16));
 
     // The whole sculpture leans toward the pointer and drifts when left alone. Sand lies still.
-    const calm = mode === "sand" ? 0.1 : 1;
+    const calm = mode === "sand" ? 0.1 : mode === "ink" ? 0 : 1;
+    if (inkDirty) {
+      inkDirty = false;
+      if (mode === "ink") inkRender();
+    }
     const drift = 1 - 0.6 * ptr.on;
     const wantY = ((ptr.sx / halfW) * 0.2 * ptr.on + Math.sin(time * 0.41) * 0.07 * drift) * calm;
     const wantX = (-(ptr.sy / halfH) * 0.13 * ptr.on + Math.sin(time * 0.29 + 1.3) * 0.04 * drift) * calm;
