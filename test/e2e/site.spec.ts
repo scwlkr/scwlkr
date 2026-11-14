@@ -1,34 +1,30 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
-test("presents the personal site and all selected work", async ({ page }) => {
+const ways = [
+  { name: "wlkr.si", href: "https://wlkr.si" },
+  { name: "x", href: "https://x.com/scwlkr" },
+  { name: "instagram", href: "https://instagram.com/scwlkr_" },
+];
+
+// The live version only runs where WebGL2 does; everywhere else the plain version is the site.
+async function settle(page: Page): Promise<boolean> {
+  await page.waitForFunction(() => {
+    const root = document.documentElement;
+    return Boolean(root.dataset.view) || !root.classList.contains("live");
+  });
+  return page.evaluate(() => document.documentElement.classList.contains("live"));
+}
+
+test("presents scwlkr and exactly three ways out", async ({ page }) => {
   await page.goto("/");
 
-  await expect(page).toHaveTitle(/scwlkr — I build whatever/);
+  await expect(page).toHaveTitle("scwlkr");
   await expect(page.getByRole("heading", { level: 1, name: "scwlkr" })).toBeAttached();
-  await expect(page.getByText("I build whatever", { exact: true })).toBeVisible();
-  await expect(page.locator("[data-project]")).toHaveCount(6);
+  await expect(page.locator("a")).toHaveCount(ways.length);
 
-  const projects = ["OpenJob", "WalkLang", "LocalHub", "UQIQ", "Vampyre", "paletteWOW"];
-  for (const project of projects) {
-    await expect(page.getByRole("heading", { level: 3, name: project })).toBeAttached();
+  for (const way of ways) {
+    await expect(page.locator(`a[href="${way.href}"]`)).toHaveText(way.name);
   }
-
-  await expect(page.getByRole("link", { name: /See every rabbit hole/ })).toHaveAttribute(
-    "href",
-    "https://github.com/scwlkr?tab=repositories",
-  );
-});
-
-test("color signal is interactive and keyboard accessible", async ({ page }) => {
-  await page.goto("/");
-
-  const toggle = page.getByRole("button", { name: "Change the site color signal" });
-  await toggle.focus();
-  await expect(toggle).toBeFocused();
-  await page.keyboard.press("Enter");
-
-  await expect(page.locator("html")).toHaveAttribute("data-palette", "green");
-  await expect(page.locator("#palette-status")).toHaveText("Green signal active.");
 });
 
 test("publishes the complete scwlkr favicon package", async ({ page, request }) => {
@@ -38,57 +34,112 @@ test("publishes the complete scwlkr favicon package", async ({ page, request }) 
   await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute("href", "/apple-touch-icon.png");
   await expect(page.locator('link[rel="manifest"]')).toHaveAttribute("href", "/site.webmanifest");
 
-  for (const asset of ["/favicon.svg", "/favicon.ico", "/apple-touch-icon.png", "/icon-192.png", "/icon-512.png", "/site.webmanifest"]) {
+  for (const asset of [
+    "/favicon.svg",
+    "/favicon.ico",
+    "/apple-touch-icon.png",
+    "/icon-192.png",
+    "/icon-512.png",
+    "/site.webmanifest",
+    "/wordmark.svg",
+    "/og.png",
+    "/fonts/inter-800.woff2",
+  ]) {
     const response = await request.get(asset);
     expect(response.ok(), asset).toBeTruthy();
+    expect(response.headers()["content-type"], asset).not.toContain("text/html");
   }
 });
 
-test("layout stays inside the viewport", async ({ page }) => {
-  await page.goto("/");
-  await page.locator("#about").scrollIntoViewIfNeeded();
-
-  const layout = await page.evaluate(() => ({
-    viewport: document.documentElement.clientWidth,
-    content: document.documentElement.scrollWidth,
-  }));
-
-  expect(layout.content).toBeLessThanOrEqual(layout.viewport + 1);
-  await expect(page.locator("#about")).toBeVisible();
-});
-
-test("reduced motion keeps the page readable", async ({ page }) => {
+test("reduced motion gets the plain version", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
 
-  await expect(page.locator(".hero-name")).toBeVisible();
-  await expect(page.locator(".reveal").first()).toHaveCSS("opacity", "1");
+  expect(await settle(page)).toBe(false);
+  await expect(page.getByRole("img", { name: "scwlkr" })).toBeVisible();
+  for (const way of ways) {
+    await expect(page.locator(`a[href="${way.href}"]`)).toBeVisible();
+  }
 });
 
-test("the complete page remains usable without JavaScript", async ({ browser }) => {
+test("the page is complete without JavaScript", async ({ browser }) => {
   const context = await browser.newContext({ javaScriptEnabled: false });
   const page = await context.newPage();
   await page.goto("/");
 
-  await expect(page.getByRole("heading", { level: 2, name: /No niche/ })).toBeVisible();
-  await expect(page.locator("[data-project]")).toHaveCount(6);
-  await expect(page.getByRole("heading", { level: 2, name: /Curiosity with/ })).toBeVisible();
+  await expect(page.getByRole("img", { name: "scwlkr" })).toBeVisible();
+  for (const way of ways) {
+    await expect(page.locator(`a[href="${way.href}"]`)).toBeVisible();
+  }
 
   await context.close();
 });
 
-test("project names fit at the 320px support boundary", async ({ page }) => {
-  await page.setViewportSize({ width: 320, height: 720 });
+test("nothing overflows at the 320px support boundary", async ({ page }) => {
+  for (const reducedMotion of ["reduce", "no-preference"] as const) {
+    await page.emulateMedia({ reducedMotion });
+    await page.setViewportSize({ width: 320, height: 640 });
+    await page.goto("/");
+    await settle(page);
+
+    const layout = await page.evaluate(() => ({
+      viewport: document.documentElement.clientWidth,
+      content: document.documentElement.scrollWidth,
+    }));
+    expect(layout.content, reducedMotion).toBeLessThanOrEqual(layout.viewport + 1);
+  }
+});
+
+test("the live version is driven by keys alone", async ({ page }) => {
   await page.goto("/");
+  test.skip(!(await settle(page)), "WebGL2 is unavailable here, so the plain version is served");
 
-  const bounds = await page.locator("[data-project]").evaluateAll((projects) => projects.map((project) => {
-    const card = project.getBoundingClientRect();
-    const title = project.querySelector("h3")?.getBoundingClientRect();
-    return {
-      name: project.querySelector("h3")?.textContent,
-      fits: Boolean(title && title.left >= card.left && title.right <= card.right + 1),
-    };
-  }));
+  const root = page.locator("html");
+  await expect(root).toHaveAttribute("data-view", "scwlkr");
 
-  expect(bounds.filter((project) => !project.fits)).toEqual([]);
+  await page.keyboard.press("ArrowDown");
+  await expect(root).toHaveAttribute("data-view", "mark");
+
+  await page.keyboard.press("End");
+  await expect(root).toHaveAttribute("data-view", "instagram");
+  await expect(page.locator("#out a.on")).toHaveAttribute("href", "https://instagram.com/scwlkr_");
+
+  await page.keyboard.press("ArrowDown");
+  await expect(root).toHaveAttribute("data-view", "scwlkr");
+  await expect(page.locator("#out a.on")).toHaveCount(0);
+});
+
+test("typing is the search box", async ({ page }) => {
+  await page.goto("/");
+  test.skip(!(await settle(page)), "WebGL2 is unavailable here, so the plain version is served");
+
+  const root = page.locator("html");
+  await page.keyboard.press("w");
+  await page.keyboard.press("l");
+  await expect(root).toHaveClass(/typing/);
+
+  await page.keyboard.press("Enter");
+  await expect(root).toHaveAttribute("data-view", "wlkr.si");
+  await expect(root).not.toHaveClass(/typing/);
+  await expect(page.locator("#out a.on")).toHaveAttribute("href", "https://wlkr.si");
+
+  await page.keyboard.press("h");
+  await page.keyboard.press("i");
+  await expect(root).toHaveClass(/typing/);
+  await page.keyboard.press("Escape");
+  await expect(root).not.toHaveClass(/typing/);
+  await expect(root).toHaveAttribute("data-view", "wlkr.si");
+});
+
+test("keyboard focus brings its destination on stage", async ({ page }) => {
+  await page.goto("/");
+  test.skip(!(await settle(page)), "WebGL2 is unavailable here, so the plain version is served");
+
+  const x = page.locator('a[href="https://x.com/scwlkr"]');
+  await x.focus();
+  await expect(page.locator("html")).toHaveAttribute("data-view", "x");
+  await expect(x).toHaveClass(/on/);
+
+  const box = await x.boundingBox();
+  expect(box && box.width > 40 && box.height > 40, "the focused link covers the word on screen").toBeTruthy();
 });

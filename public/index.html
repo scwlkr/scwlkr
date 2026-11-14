@@ -1,210 +1,41 @@
 <!doctype html>
-<html lang="en" data-palette="brand">
+<html lang="en">
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#181818">
-    <meta name="description" content="scwlkr builds apps, tools, games, languages, and systems that refuse to leave him alone.">
-    <meta property="og:title" content="scwlkr — independent builder">
-    <meta property="og:description" content="Apps. Tools. Games. Languages. Systems. An unreasonable number of rabbit holes.">
+    <meta name="color-scheme" content="dark">
+    <meta name="description" content="scwlkr. n00b until proven guilty.">
+    <meta property="og:title" content="scwlkr">
+    <meta property="og:description" content="n00b until proven guilty.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://scwlkr.com">
-    <meta name="twitter:card" content="summary">
-    <title>scwlkr — I build whatever refuses to leave me alone.</title>
+    <meta property="og:image" content="https://scwlkr.com/og.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <title>scwlkr</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="icon" href="/favicon.ico" sizes="any">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180">
     <link rel="manifest" href="/site.webmanifest">
+    <link rel="preload" href="/fonts/inter-800.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="/styles.css">
+    <script src="/boot.js"></script>
     <script type="module" src="/app.js"></script>
   </head>
   <body>
-    <a class="skip-link" href="#work">Skip to the work</a>
+    <canvas id="dust" aria-hidden="true"></canvas>
 
-    <div class="site-shell">
-      <header class="site-header">
-        <a class="wordmark" href="#top" aria-label="scwlkr, back to top">
-          <img src="/favicon.svg" alt="" aria-hidden="true">
-        </a>
+    <main>
+      <img class="mark" src="/favicon.svg" alt="" width="64" height="64">
+      <h1><img src="/wordmark.svg" alt="scwlkr" width="3834" height="1113"></h1>
+      <nav id="out">
+        <a href="https://wlkr.si">wlkr.si</a>
+        <a href="https://x.com/scwlkr" rel="me">x</a>
+        <a href="https://instagram.com/scwlkr_" rel="me">instagram</a>
+      </nav>
+    </main>
 
-        <div class="header-readout" aria-label="Location and local time">
-          <span>DALLAS, TX</span>
-          <time id="local-time" datetime="">--:--:--</time>
-        </div>
-
-        <nav class="site-nav" aria-label="Primary navigation">
-          <a href="#work">Work</a>
-          <a href="#about">About</a>
-          <a href="https://github.com/scwlkr" target="_blank" rel="noreferrer">GitHub <span aria-hidden="true">↗</span></a>
-        </nav>
-
-        <button class="signal-toggle" id="signal-toggle" type="button" aria-label="Change the site color signal">
-          <span class="signal-toggle__lamp" aria-hidden="true"></span>
-          <span>SHIFT SIGNAL</span>
-        </button>
-      </header>
-
-      <main>
-        <section class="hero" id="top" aria-labelledby="hero-title">
-          <div class="hero-grid" aria-hidden="true"></div>
-          <p class="hero-kicker reveal">INDEPENDENT BUILDER / N00B UNTIL PROVEN GUILTY</p>
-
-          <h1 class="sr-only" id="hero-title">scwlkr</h1>
-          <div class="hero-name" id="hero-name" aria-hidden="true">
-            <span>S</span><span>C</span><span>W</span><span>L</span><span>K</span><span>R</span>
-          </div>
-
-          <div class="hero-statement reveal">
-            <p>I build whatever</p>
-            <p>refuses to leave me alone.</p>
-          </div>
-
-          <div class="hero-bottom reveal">
-            <p class="hero-intro">
-              Apps, tools, games, languages, and systems. Some useful.
-              Some unreasonably committed to the bit.
-            </p>
-            <a class="down-link" href="#work">
-              <span>See the evidence</span>
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v17M5 13l7 7 7-7"/></svg>
-            </a>
-          </div>
-
-          <div class="cursor-readout" aria-hidden="true">
-            <span>X <b id="pointer-x">000</b></span>
-            <span>Y <b id="pointer-y">000</b></span>
-          </div>
-        </section>
-
-        <section class="work" id="work" aria-labelledby="work-title">
-          <div class="section-heading reveal">
-            <p class="section-label">SELECTED EVIDENCE</p>
-            <h2 id="work-title">No niche.<br>Just momentum.</h2>
-            <p>Things I cared enough about to make real.</p>
-          </div>
-
-          <div class="project-list">
-            <a class="project project--openjob reveal" href="https://github.com/scwlkr/openjob" target="_blank" rel="noreferrer" data-project>
-              <div class="project-copy">
-                <p class="project-kind">WEB · NATIVE · TERMINAL</p>
-                <h3>OpenJob</h3>
-                <p>One clear shared task list, everywhere the work happens.</p>
-                <span class="project-link">Open source <b aria-hidden="true">↗</b></span>
-              </div>
-              <div class="project-art project-art--tasks" aria-hidden="true">
-                <span class="task-card task-card--one"><i></i>Ship the thing</span>
-                <span class="task-card task-card--two"><i></i>Break the thing</span>
-                <span class="task-card task-card--three"><i></i>Ship it better</span>
-                <span class="project-stamp">ONE LIST<br>NO FOG</span>
-              </div>
-            </a>
-
-            <a class="project project--walklang reveal" href="https://github.com/scwlkr/WalkLang" target="_blank" rel="noreferrer" data-project>
-              <div class="project-copy">
-                <p class="project-kind">PROGRAMMING LANGUAGE · C++ → C</p>
-                <h3>WalkLang</h3>
-                <p>A small compiled language with syntax that reads like it means it.</p>
-                <span class="project-link">Read the source <b aria-hidden="true">↗</b></span>
-              </div>
-              <div class="project-art project-art--code" aria-hidden="true">
-                <span class="code-gutter">01<br>02<br>03<br>04</span>
-                <code><b>func:</b> make(idea)<br>&nbsp;&nbsp;<b>while:</b> idea.is_loud<br>&nbsp;&nbsp;&nbsp;&nbsp;build: idea<br><em>out: "real"</em></code>
-                <span class="compiled-pill">COMPILED ✓</span>
-              </div>
-            </a>
-
-            <a class="project project--localhub reveal" href="https://github.com/scwlkr/LocalHub" target="_blank" rel="noreferrer" data-project>
-              <div class="project-copy">
-                <p class="project-kind">LOCAL AI · TERMINAL</p>
-                <h3>LocalHub</h3>
-                <p>A tiny terminal bridge between Codex and the models living on your own machine.</p>
-                <span class="project-link">Inspect the machine <b aria-hidden="true">↗</b></span>
-              </div>
-              <div class="project-art project-art--terminal" aria-hidden="true">
-                <div class="terminal-top"><i></i><i></i><i></i><span>lh / local</span></div>
-                <code><b>$</b> lh<br><span>✓ model found</span><br><span>✓ context loaded</span><br><em>handoff → codex_</em></code>
-                <div class="terminal-pulse"></div>
-              </div>
-            </a>
-
-            <a class="project project--uqiq reveal" href="https://github.com/scwlkr/UQIQ" target="_blank" rel="noreferrer" data-project>
-              <div class="project-copy">
-                <p class="project-kind">MOBILE GAME · GODOT</p>
-                <h3>UQIQ</h3>
-                <p>A fake-IQ puzzle game that makes you feel smart, dumb, and determined.</p>
-                <span class="project-link">Get judged <b aria-hidden="true">↗</b></span>
-              </div>
-              <div class="project-art project-art--iq" aria-hidden="true">
-                <span class="iq-orbit"></span>
-                <span class="iq-shape iq-shape--circle">?</span>
-                <span class="iq-shape iq-shape--square">!</span>
-                <span class="iq-shape iq-shape--triangle">△</span>
-                <span class="iq-caption">THIS IS NOT<br>AN IQ TEST</span>
-              </div>
-            </a>
-
-            <a class="project project--vampyre reveal" href="https://github.com/scwlkr/Vampyre" target="_blank" rel="noreferrer" data-project>
-              <div class="project-copy">
-                <p class="project-kind">AGENTS · GITHUB · CODEX</p>
-                <h3>Vampyre</h3>
-                <p>An autonomous software factory with GitHub as the queue and a human at the merge gate.</p>
-                <span class="project-link">Enter the factory <b aria-hidden="true">↗</b></span>
-              </div>
-              <div class="project-art project-art--factory" aria-hidden="true">
-                <span class="factory-node">ISSUE</span>
-                <i class="factory-line factory-line--one"></i>
-                <span class="factory-node factory-node--worker">AGENT</span>
-                <i class="factory-line factory-line--two"></i>
-                <span class="factory-node factory-node--merge">MERGE?</span>
-                <span class="factory-human">HUMAN GATE</span>
-              </div>
-            </a>
-
-            <a class="project project--palette reveal" href="https://github.com/scwlkr/paletteWOW" target="_blank" rel="noreferrer" data-project>
-              <div class="project-copy">
-                <p class="project-kind">COLOR TOOL · OPEN SOURCE</p>
-                <h3>paletteWOW</h3>
-                <p>A fast color palette generator with no ads, no ceremony, and no patience for beige.</p>
-                <span class="project-link">Make colors <b aria-hidden="true">↗</b></span>
-              </div>
-              <div class="project-art project-art--palette" aria-hidden="true">
-                <i style="--swatch:#181818"></i>
-                <i style="--swatch:#23ce6b"></i>
-                <i style="--swatch:#ffffff"></i>
-                <i style="--swatch:#000088"></i>
-                <i style="--swatch:#f4d35e"></i>
-                <span># DO WHATEVER</span>
-              </div>
-            </a>
-          </div>
-        </section>
-
-        <section class="about" id="about" aria-labelledby="about-title">
-          <div class="about-rule reveal" aria-hidden="true"><span></span><b>32.7767° N / 96.7970° W</b></div>
-          <div class="about-grid">
-            <p class="section-label reveal">ABOUT THE OPERATOR</p>
-            <h2 id="about-title" class="reveal">Curiosity with<br>a build command.</h2>
-            <div class="about-copy reveal">
-              <p>I’m scwlkr, an independent builder in Dallas.</p>
-              <p>I like taking ideas all the way out: product, code, interface, deployment, and the weird little detail nobody asked for.</p>
-              <p>Most of this started with “I wonder if…” and got out of hand.</p>
-            </div>
-            <a class="github-cta reveal" href="https://github.com/scwlkr?tab=repositories" target="_blank" rel="noreferrer">
-              <span>See every rabbit hole</span>
-              <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M10 38 38 10M16 10h22v22"/></svg>
-            </a>
-          </div>
-        </section>
-      </main>
-
-      <footer class="site-footer">
-        <p>© <span id="year">2026</span> SCWLKR</p>
-        <p>N00B UNTIL PROVEN GUILTY.</p>
-        <a href="#top">BACK TO TOP ↑</a>
-      </footer>
-    </div>
-
-    <div class="palette-status sr-only" id="palette-status" aria-live="polite"></div>
-    <noscript><p class="noscript">Still works without JavaScript. It just sits still.</p></noscript>
+    <div id="rail" aria-hidden="true"></div>
+    <div id="dot" aria-hidden="true"></div>
   </body>
 </html>
