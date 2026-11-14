@@ -483,6 +483,13 @@ function live() {
   let queryTimer = 0;
   let sayTimer = 0;
   let face = null;
+  let stage = [0, 0, 0, 0];
+
+  // Whether a point on screen is on (or right beside) whatever the dust is showing.
+  function onStage(x, y) {
+    const near = 26;
+    return x > stage[0] - near && x < stage[2] + near && y > stage[1] - near && y < stage[3] + near;
+  }
 
   // "" is a normal view; "say" a greeting, "clock" the time, "sand" the collapsed pile.
   function setMode(next) {
@@ -556,6 +563,7 @@ function live() {
 
     const pad = 14;
     const [x0, y0, x1, y1] = shape.box;
+    stage = [halfW + ox + x0, halfH + oy + y0, halfW + ox + x1, halfH + oy + y1];
     out.style.setProperty("--x", `${(halfW + ox + x0 - pad).toFixed(1)}px`);
     out.style.setProperty("--y", `${(halfH + oy + y0 - pad).toFixed(1)}px`);
     out.style.setProperty("--w", `${(x1 - x0 + pad * 2).toFixed(1)}px`);
@@ -1019,14 +1027,20 @@ function live() {
     if (event.pointerType === "mouse" && !root.classList.contains("fine")) root.classList.add("fine");
     if (press && (!held || press.touch) && Math.hypot(event.clientX - press.x, event.clientY - press.y) > 10) {
       if (press.touch && !press.moved) {
-        // A finger that rested before it moved had started a hold; writing wins.
-        window.clearTimeout(holdTimer);
-        held = false;
-        holding = false;
-        root.classList.remove("hold");
-        touched();
-        press.writing = true;
-        inkOpen(press.x, press.y);
+        // A finger on the dust plays with it. A finger that starts in the empty dark writes.
+        const writes = mode === "ink" || ((mode === "" || mode === "say") && !onStage(press.x, press.y));
+        if (writes) {
+          // It may have rested first and started a hold; writing wins.
+          window.clearTimeout(holdTimer);
+          held = false;
+          holding = false;
+          root.classList.remove("hold");
+          touched();
+          press.writing = true;
+          inkOpen(press.x, press.y);
+        } else if (!held) {
+          window.clearTimeout(holdTimer);
+        }
       }
       press.moved = true;
     }
@@ -1075,6 +1089,13 @@ function live() {
     }
     if (press && press.touch) {
       ptr.want = 0;
+      const dx = event.clientX - press.x;
+      const dy = event.clientY - press.y;
+      if (!ink.length && !held && Math.abs(dy) > 44 && Math.abs(dy) > Math.abs(dx) && performance.now() - press.at < 800) {
+        // A quick swipe up or down across the dust still turns the page.
+        step(dy < 0 ? 1 : -1);
+        return;
+      }
       if (ink.length && !press.moved && !held) {
         // A tap while writing is a dot, as on an i.
         ink.push([[press.x, press.y]]);

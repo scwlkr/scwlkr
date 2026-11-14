@@ -179,9 +179,10 @@ test("a finger writes in dust on a phone", async ({ page }) => {
       new PointerEvent(type, { pointerType: "touch", clientX: x, clientY: y, button: 0, bubbles: true }),
     );
     // Rest first, as a real finger does, then draw.
-    fire("pointerdown", 100, 300);
+    // Start in the empty space above the wordmark.
+    fire("pointerdown", 100, 60);
     await new Promise((resolve) => window.setTimeout(resolve, 600));
-    for (let i = 1; i <= 10; i += 1) fire("pointermove", 100 + i * 12, 300 + i * 9);
+    for (let i = 1; i <= 10; i += 1) fire("pointermove", 100 + i * 12, 60 + i * 6);
   });
   const root = page.locator("html");
   await expect(root).toHaveAttribute("data-mode", "ink");
@@ -212,8 +213,27 @@ test("handwriting is read: a drawn x goes to x", async ({ page }) => {
       fire("pointerup", x1, y1);
       await new Promise((resolve) => window.setTimeout(resolve, 150));
     };
-    await stroke(120, 260, 240, 400);
-    await stroke(240, 260, 120, 400);
+    await stroke(120, 40, 220, 150);
+    await stroke(220, 40, 120, 150);
   });
   await expect(page.locator("html")).toHaveAttribute("data-view", "x", { timeout: 8_000 });
+});
+
+test("a finger on the wordmark plays with it instead of writing", async ({ page }) => {
+  await page.goto("/");
+  test.skip(!(await settle(page)), "WebGL2 is unavailable here, so the plain version is served");
+
+  await page.evaluate(() => {
+    const fire = (type: string, x: number, y: number) => window.dispatchEvent(
+      new PointerEvent(type, { pointerType: "touch", clientX: x, clientY: y, button: 0, bubbles: true }),
+    );
+    const x = window.innerWidth / 2;
+    const y = window.innerHeight / 2 - window.innerHeight * 0.02;
+    fire("pointerdown", x - 40, y);
+    for (let i = 1; i <= 10; i += 1) fire("pointermove", x - 40 + i * 8, y + i);
+    fire("pointerup", x + 40, y + 10);
+  });
+  const root = page.locator("html");
+  await expect(root).not.toHaveAttribute("data-mode", "ink");
+  await expect(root).toHaveAttribute("data-view", "scwlkr");
 });
