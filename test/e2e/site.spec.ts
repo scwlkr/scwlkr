@@ -186,3 +186,13 @@ test("a sideways drag types on a phone", async ({ page }) => {
   });
   await expect(page.locator("html")).toHaveClass(/typing/);
 });
+
+test("anything else gets a one-sentence reply from the in-browser model", async ({ page }) => {
+  await page.goto("/");
+  test.skip(!(await settle(page)), "WebGL2 is unavailable here, so the plain version is served");
+
+  for (const key of ["h", "e", "l", "l", "o", "Enter"]) await page.keyboard.press(key);
+  const root = page.locator("html");
+  await expect(root).toHaveAttribute("data-say", /\S{2,}/, { timeout: 20_000 });
+  await expect(root).toHaveAttribute("data-mode", "say");
+});

@@ -70,7 +70,7 @@ if (siteUrl) {
   }
   assert.doesNotMatch(liveHtml, /ROOM_1|One-Room Internet/i, "retired experience must not remain live");
 
-  for (const asset of ["/app.js", "/boot.js", "/shapes.js", "/styles.css", "/wordmark.svg", "/fonts/inter-800.woff2", "/og.png"]) {
+  for (const asset of ["/app.js", "/boot.js", "/shapes.js", "/styles.css", "/wordmark.svg", "/fonts/inter-800.woff2", "/og.png", "/mind.js", "/mind/worker.js", "/mind/model.json", "/mind/model.bin", "/mind/tok.json"]) {
     const assetResponse = await fetch(new URL(asset, siteUrl), { headers: agent });
     assert.equal(assetResponse.status, 200, `${asset} must be served`);
     assert.doesNotMatch(assetResponse.headers.get("content-type") ?? "", /text\/html/i, `${asset} must not fall back to the page`);
