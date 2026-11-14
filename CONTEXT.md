@@ -17,7 +17,7 @@ There is no interface. The screen holds one thing at a time, made of dust: the s
 - press and hold pulls the dust into the pointer, release throws it back out;
 - typing anywhere spells the letters in dust, a matching destination ghosts in, and Enter goes there;
 - a word that is a destination is itself the link;
-- on a phone there is no keyboard and none is shown: the finger writes. Every grain runs to the line being drawn, and when the hand stops the writing is read (`public/hand.js`) and becomes the typed word, which then sends itself. One quick straight flick up or down still turns the page.
+- on a phone there is no keyboard and none is shown. A finger on the dust plays with it (push, hold, swipe up or down to turn the page). A finger that starts in the empty dark around it writes: every grain runs to the line being drawn, and when the hand stops the writing is read (`public/hand.js`) and becomes the typed word, which then sends itself.
 
 Left alone, the page plays itself through the views. Left alone for a minute and a half, whatever is on screen crumbles into a pile of sand until it is touched.
 
