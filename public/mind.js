@@ -1,7 +1,8 @@
 // mind.js — answers typed text with one short sentence from an on-device model.
 // Uses the browser's built-in model (Chrome Prompt API, `LanguageModel`) only.
 // Nothing loads until reply() is first called. reply() never throws and settles
-// within 20 seconds; it resolves null when no model can answer here.
+// within 20 seconds; it resolves null when no model can answer here, including
+// when the browser has the feature but has not downloaded its model yet.
 
 const LIMIT_MS = 20000;
 const MAX_CHARS = 90;
@@ -43,9 +44,14 @@ async function getSession() {
     return null;
   }
   sessionPromise = (async () => {
+    // Some builds expose LanguageModel but never answer availability(); treat
+    // a hang as "no model here" so later calls resolve null at once.
     let state = "unavailable";
     try {
-      state = await LM.availability(OPTIONS);
+      state = await Promise.race([
+        LM.availability(OPTIONS),
+        new Promise((r) => setTimeout(() => r("unavailable"), 5000)),
+      ]);
     } catch {
       state = "unavailable";
     }
@@ -53,8 +59,13 @@ async function getSession() {
       dead = true;
       return null;
     }
-    // "available", "downloadable" or "downloading": create() starts or joins the
-    // download. It keeps running in the background if this call times out.
+    // Only answer when the model is already on this machine. Creating a session in
+    // the "downloadable" state would make the visitor's browser fetch several
+    // gigabytes because they pressed Enter on a personal site. Not our call to make.
+    if (state !== "available") {
+      sessionPromise = null;
+      return null;
+    }
     return await LM.create(OPTIONS);
   })().catch(() => {
     sessionPromise = null; // allow a later retry (e.g. needed a user gesture)
